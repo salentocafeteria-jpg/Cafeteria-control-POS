@@ -139,27 +139,23 @@
     <div class="modal-card">
       <div style="text-align: center; margin-bottom: 20px;">
         <span style="font-size: 36px;">☕</span>
-        <h2 style="font-size: 20px; font-weight: 800; color: #1c1917; margin-top: 4px;">CaféControl POS v6</h2>
-        <p style="font-size: 12px; color: #78716c;">Seleccioná tu usuario e ingresá tu contraseña</p>
+        <h2 style="font-size: 20px; font-weight: 800; color: #1c1917; margin-top: 4px;">CaféControl POS v5</h2>
+        <p style="font-size: 12px; color: #78716c;">Ingresá tu usuario y contraseña para continuar</p>
       </div>
       <form onsubmit="handleLogin(event)" class="space-y-sm">
         <div>
           <label class="field-label">Usuario</label>
-          <select id="loginUserSelect" class="input-ctrl" style="font-weight: 600;"></select>
+          <input type="text" id="loginUsernameInput" required placeholder="Ej: admin" autocomplete="username" autofocus>
         </div>
         <div>
           <label class="field-label">Contraseña</label>
-          <input type="password" id="loginPassword" required placeholder="••••••••" autofocus>
+          <input type="password" id="loginPassword" required placeholder="••••••••" autocomplete="current-password">
         </div>
-        <button type="submit" class="btn-stone" style="margin-top: 8px; padding: 12px;">Ingresar al Sistema</button>
+        <button type="submit" id="loginSubmitBtn" class="btn-stone" style="margin-top: 8px; padding: 12px;">Ingresar al Sistema</button>
       </form>
-      <div style="margin-top: 16px; font-size: 11px; color: #78716c; text-align: center; line-height: 1.3;">
-        💡 <strong>Credenciales por defecto:</strong><br>
-        Admin: <code>admin</code> (pass: <code>admin123</code>) | Vendedor: <code>vendedor</code> (pass: <code>vendedor123</code>)
-      </div>
     </div>
   </div>
-
+  
   <!-- MODAL DE CIERRE / COBRO DE PEDIDO -->
   <div id="closeOrderModal" class="modal-overlay hidden">
     <div class="modal-card">
@@ -1103,28 +1099,43 @@
       return `${months[month] || month} ${year}`;
     }
 
-    // AUTENTICACIÓN Y SESIÓN
+    // AUTENTICACIÓN Y SESIÓN (Texto libre + validación en nube)
     function openLoginModal() {
-      const select = document.getElementById('loginUserSelect');
-      select.innerHTML = state.users.map(u => `<option value="${u.id}">${u.fullName} (${u.username} - ${u.role.toUpperCase()})</option>`).join('');
+     document.getElementById('loginUsernameInput').value = '';
+      document.getElementById('loginPassword').value = '';
       document.getElementById('loginModal').classList.remove('hidden');
+      setTimeout(() => document.getElementById('loginUsernameInput').focus(), 100);
     }
-
-    function handleLogin(e) {
+    
+    async function handleLogin(e) {
       e.preventDefault();
-      const userId = document.getElementById('loginUserSelect').value;
+      const btn = document.getElementById('loginSubmitBtn');
+      const typedUser = document.getElementById('loginUsernameInput').value.trim().toLowerCase();
       const pass = document.getElementById('loginPassword').value;
 
-      const user = state.users.find(u => u.id === userId);
-      if (!user || user.pass !== pass) {
-        return alert('❌ Contraseña incorrecta.');
+      btn.disabled = true;
+      btn.textContent = 'Verificando...';
+
+      // Nos aseguramos de tener la lista más reciente de usuarios desde el Gist antes de validar
+      await loadStateAsync();
+
+      btn.disabled = false;
+      btn.textContent = 'Ingresar al Sistema';
+
+      // Buscamos coincidencia exacta de usuario y contraseña
+      const user = state.users.find(u => u.username.trim().toLowerCase() === typedUser && u.pass === pass);
+      
+      if (!user) {
+        return alert('❌ Usuario o contraseña incorrectos.');
       }
 
       state.currentLoggedInUserId = user.id;
       localStorage.setItem(SESSION_USER_KEY, user.id);
-      saveState();
+      
       document.getElementById('loginModal').classList.add('hidden');
+      document.getElementById('loginUsernameInput').value = '';
       document.getElementById('loginPassword').value = '';
+      
       applyRolePermissions();
       renderAll();
     }
