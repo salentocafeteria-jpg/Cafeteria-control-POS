@@ -1,0 +1,1342 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>CaféControl POS v5 - ARS & FIFO</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, sans-serif; background-color: #f5f5f4; color: #292524; min-height: 100vh; display: flex; flex-direction: column; line-height: 1.4; }
+    
+    header { position: -webkit-sticky; position: sticky; top: 0; z-index: 1000; background-color: #1c1917; color: #ffffff; box-shadow: 0 2px 4px rgba(0,0,0,0.1); width: 100%; }
+    .header-inner { max-width: 1280px; margin: 0 auto; padding: 12px 16px; display: -webkit-flex; display: flex; -webkit-flex-wrap: wrap; flex-wrap: wrap; -webkit-align-items: center; align-items: center; -webkit-justify-content: space-between; justify-content: space-between; }
+    .brand { display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; }
+    .brand-icon { font-size: 24px; margin-right: 12px; }
+    .brand h1 { font-size: 18px; font-weight: 700; line-height: 1.2; }
+    .brand p { font-size: 12px; color: #a8a29e; }
+    
+    .user-box { display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; background-color: #292524; padding: 6px 12px; border-radius: 8px; border: 1px solid #44403c; margin: 4px 0; }
+    .user-box span { font-size: 11px; color: #a8a29e; text-transform: uppercase; font-weight: 600; }
+    
+    .backup-actions { display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; }
+    .btn-dark { font-size: 12px; background-color: #44403c; color: #ffffff; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; display: inline-block; margin-left: 6px; }
+    .btn-dark:hover { background-color: #57534e; }
+    .hidden { display: none !important; }
+    
+    nav { background-color: #ffffff; border-bottom: 1px solid #e7e5e4; width: 100%; }
+    .nav-inner { max-width: 1280px; margin: 0 auto; padding: 0 16px; overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch; }
+    .nav-btn { background: none; border: none; border-bottom: 3px solid transparent; padding: 12px 12px; font-size: 14px; color: #57534e; cursor: pointer; display: inline-block; margin-right: 12px; }
+    .nav-btn:hover { color: #1c1917; }
+    .tab-active { border-bottom: 3px solid #d97706; color: #b45309; font-weight: 700; }
+    
+    main { max-width: 1280px; margin: 0 auto; padding: 24px 16px; width: 100%; }
+    .row-grid { width: 100%; }
+    .row-grid:after { content: ""; display: table; clear: both; }
+    
+    @media (min-width: 960px) {
+      .col-pos-left { float: left; width: 61%; padding-right: 20px; }
+      .col-pos-right { float: left; width: 39%; }
+      .col-side { float: left; width: 34%; padding-right: 20px; }
+      .col-main { float: left; width: 66%; }
+      .col-half-left { float: left; width: 50%; padding-right: 12px; }
+      .col-half-right { float: left; width: 50%; padding-left: 12px; }
+    }
+    @media (max-width: 959px) {
+      .col-pos-left, .col-pos-right, .col-side, .col-main, .col-half-left, .col-half-right { width: 100%; margin-bottom: 20px; }
+    }
+
+    .kpi-box-wrap { margin-bottom: 20px; }
+    .kpi-box-wrap:after { content: ""; display: table; clear: both; }
+    .kpi-item { float: left; width: 24%; margin-right: 1.33%; background-color: #ffffff; border-radius: 12px; border: 1px solid #e7e5e4; padding: 14px; margin-bottom: 10px; }
+    .kpi-item:last-child { margin-right: 0; }
+    .kpi-5 { float: left; width: 19%; margin-right: 1.25%; background-color: #ffffff; border-radius: 12px; border: 1px solid #e7e5e4; padding: 14px; margin-bottom: 10px; }
+    .kpi-5:last-child { margin-right: 0; }
+    @media (max-width: 768px) {
+      .kpi-item, .kpi-5 { width: 48%; margin-right: 2%; }
+    }
+
+    .space-y > * + * { margin-top: 20px; }
+    .space-y-sm > * + * { margin-top: 10px; }
+    
+    .card { background-color: #ffffff; border-radius: 12px; border: 1px solid #e7e5e4; box-shadow: 0 1px 2px rgba(0,0,0,0.04); padding: 20px; margin-bottom: 20px; }
+    .card-header { margin-bottom: 16px; }
+    .card-title { font-size: 17px; font-weight: 700; color: #1c1917; }
+    .card-subtitle { font-size: 12px; color: #78716c; margin-top: 2px; }
+    
+    .pos-subnav { background: #292524; padding: 8px 14px; border-radius: 10px 10px 0 0; overflow: hidden; }
+    .pos-subtabs { float: left; }
+    .pos-subtab-btn { background: transparent; color: #d6d3d1; border: none; padding: 8px 14px; border-radius: 6px; font-size: 13px; font-weight: 700; cursor: pointer; margin-right: 4px; }
+    .pos-subtab-btn.active { background: #ffffff; color: #1c1917; }
+    .pos-panel-body { background: #ffffff; border: 1px solid #e7e5e4; border-top: none; border-radius: 0 0 12px 12px; padding: 16px; }
+
+    .pos-grid:after { content: ""; display: table; clear: both; }
+    .pos-item { float: left; width: 31.33%; margin: 1%; background-color: #ffffff; border: 1px solid #e7e5e4; border-left: 4px solid #d97706; border-radius: 10px; padding: 12px; text-align: left; cursor: pointer; min-height: 92px; box-shadow: 0 1px 2px rgba(0,0,0,0.03); }
+    .pos-item:active { background-color: #fffbeb; border-color: #fbbf24; }
+    @media (max-width: 600px) { .pos-item { width: 48%; } }
+    .pos-item-name { font-weight: 700; font-size: 13px; color: #292524; }
+    .pos-item-meta { font-size: 11px; margin-top: 4px; color: #78716c; }
+    .pos-item-price { margin-top: 8px; font-size: 15px; font-weight: 800; color: #b45309; }
+    
+    .sticky-card { padding: 0; overflow: hidden; }
+    .ticket-top-bar { background: #ea580c; color: #ffffff; padding: 12px 16px; overflow: hidden; }
+    .ticket-top-bar.new-order { background: #292524; }
+    .ticket-meta { padding: 12px 16px; background: #fafaf9; border-bottom: 1px solid #e7e5e4; font-size: 12px; }
+    .ticket-meta-row { margin-bottom: 8px; }
+    .ticket-meta-row:last-child { margin-bottom: 0; }
+    .ticket-section-bar { background: #78716c; color: #ffffff; padding: 8px 16px; font-size: 12px; font-weight: 700; text-transform: uppercase; overflow: hidden; }
+    .cart-list { max-height: 250px; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 12px 16px; }
+    .cart-row { background-color: #ffffff; padding: 8px 10px; border-radius: 6px; border: 1px solid #e7e5e4; border-left: 3px solid #ea580c; margin-bottom: 8px; font-size: 13px; overflow: hidden; }
+    .btn-qty { width: 26px; height: 26px; border: none; border-radius: 4px; background-color: #e7e5e4; font-weight: 700; cursor: pointer; font-size: 14px; }
+
+    .discount-panel { background-color: #fde047; border-top: 1px solid #eab308; border-bottom: 1px solid #eab308; padding: 14px 16px; }
+    .discount-panel-row { margin-bottom: 10px; font-size: 12px; font-weight: 600; color: #422006; }
+
+    .ticket-total-bar { background: #44403c; color: #ffffff; padding: 12px 16px; font-size: 18px; font-weight: 800; overflow: hidden; }
+    .ticket-actions-bar { padding: 12px 16px; background: #ffffff; }
+    .pay-btn { width: 31%; margin-right: 2%; padding: 10px 4px; border-radius: 6px; font-size: 12px; cursor: pointer; border: 1px solid #d6d3d1; background-color: #ffffff; }
+    .pay-btn:last-child { margin-right: 0; }
+    .pay-btn-active { border: 2px solid #d97706; background-color: #fffbeb; color: #92400e; font-weight: 700; }
+    
+    .order-row-active { background-color: #fef08a !important; }
+    .status-pill-open { border: 1px solid #ef4444; color: #dc2626; background: #fff; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; display: inline-block; }
+    .status-pill-closed { color: #059669; font-weight: 700; font-size: 12px; }
+
+    label.field-label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px; color: #44403c; }
+    input[type="text"], input[type="number"], input[type="password"], input[type="date"], select.input-ctrl, textarea.input-ctrl { width: 100%; border: 1px solid #d6d3d1; border-radius: 6px; padding: 8px 10px; font-size: 14px; background-color: #ffffff; font-family: inherit; -webkit-appearance: none; }
+    .btn-primary { width: 100%; background-color: #059669; color: #ffffff; border: none; font-weight: 700; padding: 11px; border-radius: 8px; font-size: 13px; cursor: pointer; }
+    .btn-stone { width: 100%; background-color: #1c1917; color: #ffffff; border: none; font-weight: 700; padding: 11px; border-radius: 8px; font-size: 13px; cursor: pointer; }
+    .btn-outline { background-color: #ffffff; color: #292524; border: 1px solid #d6d3d1; font-weight: 600; padding: 8px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; }
+    .btn-amber-sm { background-color: #d97706; color: #ffffff; border: none; padding: 6px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; }
+    
+    .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; width: 100%; height: 100%; background: rgba(28, 25, 23, 0.88); z-index: 2000; padding: 16px; overflow-y: auto; }
+    .modal-card { background: #ffffff; width: 100%; max-width: 400px; margin: 40px auto; border-radius: 16px; padding: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+
+    .recipe-box { background-color: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 12px; }
+    .info-box { background-color: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 12px; font-size: 12px; color: #1e40af; }
+    .balance-asset { background-color: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 8px; padding: 12px; margin-bottom: 10px; }
+    .balance-equity { background-color: #fafaf9; border: 1px solid #e7e5e4; border-radius: 8px; padding: 12px; }
+    
+    .permissions-grid { background: #fafaf9; border: 1px solid #e7e5e4; border-radius: 8px; padding: 10px; }
+    .perm-item { display: inline-block; width: 48%; font-size: 12px; margin-bottom: 6px; cursor: pointer; }
+
+    .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; text-align: left; }
+    th { background-color: #fafaf9; color: #57534e; font-size: 11px; text-transform: uppercase; padding: 10px; border-bottom: 1px solid #e7e5e4; }
+    td { padding: 10px; border-bottom: 1px solid #f5f5f4; vertical-align: middle; }
+    .text-right { text-align: right; }
+    .text-center { text-align: center; }
+    .text-red { color: #dc2626; }
+    .text-green { color: #059669; }
+    .text-amber { color: #b45309; }
+    .text-muted { color: #78716c; }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; }
+    .badge-amber { background-color: #fef3c7; color: #92400e; }
+    .badge-blue { background-color: #dbeafe; color: #1e40af; }
+    .badge-gray { background-color: #f5f5f4; border: 1px solid #e7e5e4; color: #44403c; }
+    .badge-red { background-color: #fee2e2; color: #991b1b; }
+  </style>
+</head>
+<body>
+
+  <div id="loginModal" class="modal-overlay">
+    <div class="modal-card">
+      <div style="text-align: center; margin-bottom: 20px;">
+        <span style="font-size: 36px;">☕</span>
+        <h2 style="font-size: 20px; font-weight: 800; color: #1c1917; margin-top: 4px;">CaféControl POS v5</h2>
+        <p style="font-size: 12px; color: #78716c;">Ingresá tu usuario y contraseña para continuar</p>
+      </div>
+      <form id="loginForm" onsubmit="return handleLogin(event);" class="space-y-sm">
+        <div>
+          <label class="field-label">Usuario</label>
+          <input type="text" id="loginUsernameInput" required placeholder="Ej: admin" autocomplete="off" autocapitalize="none" autocorrect="off">
+        </div>
+        <div>
+          <label class="field-label">Contraseña</label>
+          <input type="password" id="loginPassword" required placeholder="••••••••">
+        </div>
+        <button type="submit" id="loginSubmitBtn" class="btn-stone" style="margin-top: 8px; padding: 12px;">Ingresar al Sistema</button>
+      </form>
+      <p id="syncStatusLogin" style="margin-top: 12px; font-size: 11px; color: #78716c; text-align: center;">Listo para validar</p>
+    </div>
+  </div>
+
+  <div id="closeOrderModal" class="modal-overlay hidden">
+    <div class="modal-card">
+      <h3 style="font-size: 18px; font-weight: 800; color: #1c1917; margin-bottom: 4px;">✅ Cerrar y Cobrar Pedido</h3>
+      <p id="closeOrderSummaryText" style="font-size: 12px; color: #78716c; margin-bottom: 16px;"></p>
+
+      <div style="background: #fafaf9; border: 1px solid #e7e5e4; border-radius: 8px; padding: 12px; margin-bottom: 14px; font-size: 13px;">
+        <div style="margin-bottom: 4px; overflow: hidden;">
+          <span style="float: left;">Subtotal:</span>
+          <strong id="modalSubtotal" style="float: right;">$ 0,00</strong>
+        </div>
+        <div id="modalDiscountRow" style="margin-bottom: 6px; color: #dc2626; overflow: hidden;" class="hidden">
+          <span id="modalDiscountLabel" style="float: left;">Descuento:</span>
+          <strong id="modalDiscountAmount" style="float: right;">- $ 0,00</strong>
+        </div>
+        <div style="border-top: 1px solid #d6d3d1; padding-top: 6px; font-size: 17px; font-weight: 800; color: #059669; overflow: hidden;">
+          <span style="float: left;">Total Final:</span>
+          <span id="modalFinalTotal" style="float: right;">$ 0,00</span>
+        </div>
+      </div>
+
+      <div style="margin-bottom: 16px;">
+        <label class="field-label">Seleccioná el Medio de Pago:</label>
+        <div style="margin-top: 6px;">
+          <button type="button" onclick="selectPayment('Efectivo')" id="pay-Efectivo" class="pay-btn pay-btn-active">💵 Efectivo</button>
+          <button type="button" onclick="selectPayment('Tarjeta')" id="pay-Tarjeta" class="pay-btn">💳 Tarjeta</button>
+          <button type="button" onclick="selectPayment('QR')" id="pay-QR" class="pay-btn">📱 QR</button>
+        </div>
+      </div>
+
+      <div style="overflow: hidden;">
+        <button type="button" onclick="closeCloseOrderModal()" class="btn-outline" style="float: left; width: 35%; padding: 10px;">Cancelar</button>
+        <button type="button" onclick="confirmCloseOrder()" class="btn-primary" style="float: right; width: 62%; padding: 10px;">Confirmar Cobro</button>
+      </div>
+    </div>
+  </div>
+
+  <header>
+    <div class="header-inner">
+      <div class="brand">
+        <span class="brand-icon">☕</span>
+        <div>
+          <h1>CaféControl POS <span style="font-size: 11px; background: #d97706; color: #fff; padding: 2px 6px; border-radius: 4px; vertical-align: middle;">v5</span></h1>
+          <p>Gestión Integral · Moneda ARS · Valuación FIFO</p>
+        </div>
+      </div>
+
+      <div class="user-box">
+        <span id="activeUserLabel">Usuario: ...</span>
+        <button type="button" onclick="openLoginModal()" style="background:none; border:none; color:#fbbf24; font-weight:700; font-size:12px; cursor:pointer; text-decoration:underline; margin-left: 8px;">Cambiar</button>
+      </div>
+
+      <div class="backup-actions">
+        <span id="cloudSyncBadge" style="font-size: 11px; color: #a8a29e; margin-right: 6px;">☁️ Local</span>
+        <button type="button" onclick="manualSyncFromCloud()" class="btn-dark">🔄 Sincronizar</button>
+        <button type="button" onclick="exportBackup()" class="btn-dark">💾 Backup</button>
+      </div>
+    </div>
+
+    <nav>
+      <div class="nav-inner" id="mainNavContainer">
+        <button type="button" onclick="switchTab('pos')" id="tab-pos" class="nav-btn tab-active">1. Punto de Venta (POS)</button>
+        <button type="button" onclick="switchTab('cash')" id="tab-cash" class="nav-btn">2. Arqueo de Caja</button>
+        <button type="button" onclick="switchTab('products')" id="tab-products" class="nav-btn">3. Productos y Costos</button>
+        <button type="button" onclick="switchTab('stock')" id="tab-stock" class="nav-btn">4. Stock y Compras (FIFO)</button>
+        <button type="button" onclick="switchTab('users')" id="tab-users" class="nav-btn">5. Usuarios</button>
+        <button type="button" onclick="switchTab('finance')" id="tab-finance" class="nav-btn">6. Balance y P&L</button>
+      </div>
+    </nav>
+  </header>
+
+  <main>
+    <section id="view-pos" class="row-grid">
+      <div class="col-pos-left">
+        <div class="pos-subnav">
+          <div class="pos-subtabs">
+            <button type="button" id="subtab-pedidos" onclick="switchPosSubtab('pedidos')" class="pos-subtab-btn active">Pedidos</button>
+            <button type="button" id="subtab-historial" onclick="switchPosSubtab('historial')" class="pos-subtab-btn">Historial <span id="openOrdersCountBadge" style="background:#ea580c; color:#fff; padding:1px 6px; border-radius:10px; font-size:11px; margin-left:4px;">0</span></button>
+          </div>
+          <button type="button" onclick="startNewOrder()" class="btn-dark" style="float: right; background:#44403c; font-weight:700;">+ Nuevo Pedido</button>
+        </div>
+
+        <div id="pos-subview-pedidos" class="pos-panel-body">
+          <div style="margin-bottom: 14px;">
+            <input type="text" id="posSearchInput" onkeyup="renderPOS()" placeholder="🔍 Buscar producto..." class="input-ctrl">
+          </div>
+          <div id="posProductGrid" class="pos-grid"></div>
+        </div>
+
+        <div id="pos-subview-historial" class="pos-panel-body hidden space-y">
+          <div>
+            <div style="margin-bottom: 8px;">
+              <h3 style="font-size: 13px; font-weight: 800; color: #44403c; text-transform: uppercase;">EN CURSO</h3>
+            </div>
+            <div class="table-wrap" style="border: 1px solid #e7e5e4; border-radius: 8px;">
+              <table>
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Hora Inicio</th>
+                    <th>Estado</th>
+                    <th>Cliente</th>
+                    <th>Detalle</th>
+                    <th class="text-right">Total</th>
+                    <th class="text-center">Abrir</th>
+                  </tr>
+                </thead>
+                <tbody id="openOrdersTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div>
+            <div style="margin-bottom: 8px;">
+              <h3 style="font-size: 13px; font-weight: 800; color: #44403c; text-transform: uppercase;">CERRADAS</h3>
+            </div>
+            <div class="table-wrap" style="border: 1px solid #e7e5e4; border-radius: 8px; max-height: 320px;">
+              <table>
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Fecha / Hora</th>
+                    <th>Estado</th>
+                    <th>Cliente</th>
+                    <th>Detalle</th>
+                    <th>Pago</th>
+                    <th class="text-right">Total</th>
+                    <th class="text-right">CMV FIFO</th>
+                    <th id="salesHeaderAction" class="text-center hidden">Admin</th>
+                  </tr>
+                </thead>
+                <tbody id="salesHistoryBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-pos-right">
+        <div class="card sticky-card">
+          <div id="ticketTopBar" class="ticket-top-bar new-order">
+            <strong id="ticketHeaderTitle" style="font-size: 15px; float: left;">Nuevo Pedido</strong>
+            <button type="button" onclick="clearCart()" style="float: right; background:rgba(255,255,255,0.15); border:none; color:#ffffff; padding: 4px 8px; border-radius: 4px; font-size: 11px; cursor: pointer;">Vaciar</button>
+          </div>
+
+          <div class="ticket-meta">
+            <div class="ticket-meta-row">
+              <span style="font-weight: 600; color: #57534e; display: inline-block; width: 75px;">Hora Inicio:</span>
+              <strong id="ticketStartTime" style="color: #1c1917;">--/--/-- --:--</strong>
+            </div>
+            <div class="ticket-meta-row">
+              <label class="field-label">Cliente</label>
+              <input type="text" id="ticketCustomer" onkeyup="syncCurrentOrderMeta()" placeholder="Nombre o mesa (opcional)" style="padding: 6px 8px; font-size: 13px;">
+            </div>
+            <div class="ticket-meta-row">
+              <label class="field-label">Comentario</label>
+              <input type="text" id="ticketComment" onkeyup="syncCurrentOrderMeta()" placeholder="Nota de pedido (opcional)" style="padding: 6px 8px; font-size: 13px;">
+            </div>
+          </div>
+
+          <div class="ticket-section-bar">
+            <span style="float: left;">ADICIONAR / ÍTEMS</span>
+            <span id="ticketItemsCount" style="float: right; font-size: 11px; font-weight: 400;">0 ítems</span>
+          </div>
+
+          <div id="cartItems" class="cart-list">
+            <p class="text-muted text-center" style="padding: 24px 0; font-size: 13px;">No hay productos en el pedido</p>
+          </div>
+
+          <div id="discountDrawer" class="discount-panel hidden">
+            <div class="discount-panel-row">
+              <label class="field-label">Motivo Descuento:</label>
+              <input type="text" id="discountReasonInput" placeholder="Ej: Promo, Empleado, Cortesía" style="font-size: 12px;">
+            </div>
+            <div class="discount-panel-row">
+              <label class="field-label">Tipo:</label>
+              <label style="margin-right: 12px;"><input type="radio" name="discountType" value="percent" checked onchange="toggleDiscountTypePlaceholder()"> Porcentual (%)</label>
+              <label><input type="radio" name="discountType" value="fixed" onchange="toggleDiscountTypePlaceholder()"> Fijo ($)</label>
+            </div>
+            <div class="discount-panel-row">
+              <label class="field-label">Valor (<span id="discountUnitSymbol">%</span>):</label>
+              <input type="number" id="discountValueInput" min="0" step="0.01" placeholder="Valor" style="font-size: 12px;">
+            </div>
+            <div style="text-align: right;">
+              <button type="button" onclick="cancelDiscount()" class="btn-outline" style="padding: 6px 12px;">Cancelar</button>
+              <button type="button" onclick="applyDiscount()" style="background: #ea580c; color: #fff; border: none; padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer; margin-left: 6px;">Confirmar</button>
+            </div>
+          </div>
+
+          <div id="appliedDiscountBanner" class="hidden" style="background: #fef9c3; border-top: 1px solid #fde047; padding: 8px 16px; font-size: 12px; color: #854d0e; overflow: hidden;">
+            <span id="appliedDiscountText" style="float: left;">Descuento aplicado</span>
+            <button type="button" onclick="removeDiscount()" style="float: right; background: none; border: none; color: #dc2626; font-weight: 700; cursor: pointer; font-size: 11px; text-decoration: underline;">Quitar</button>
+          </div>
+
+          <div class="ticket-total-bar">
+            <span style="float: left;">Total:</span>
+            <span id="cartTotal" style="float: right;">$ 0,00</span>
+          </div>
+
+          <div class="ticket-actions-bar">
+            <div style="margin-bottom: 10px;">
+              <button type="button" onclick="toggleDiscountDrawer()" class="btn-outline" style="width: 100%;">
+                <strong>%</strong> Aplicar Descuento
+              </button>
+            </div>
+            <div style="overflow: hidden;">
+              <button type="button" onclick="saveOrderAsInProgress()" class="btn-outline" style="float: left; width: 48%; border-color: #d97706; color: #b45309; padding: 10px;">🕒 En Curso</button>
+              <button type="button" onclick="openCloseOrderModal()" style="float: right; width: 48%; background: #292524; color: #ffffff; border: none; padding: 10px; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer;">Cerrar Pedido</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="view-cash" class="hidden row-grid">
+      <div class="col-side space-y">
+        <div class="card">
+          <h2 class="card-title">Configurar Caja Inicial</h2>
+          <p class="card-subtitle" style="margin-bottom: 12px;">Se arrastra automáticamente el saldo anterior.</p>
+          <form onsubmit="return setInitialCash(event);" class="space-y-sm">
+            <div>
+              <label class="field-label">Fecha (DD/MM/YYYY)</label>
+              <input type="text" id="cashDate" required class="input-ctrl" readonly>
+            </div>
+            <div>
+              <label class="field-label">Monto Caja Inicial (ARS)</label>
+              <input type="number" id="cashInitialAmount" required min="0" step="0.01" placeholder="Ej: 20000">
+            </div>
+            <div>
+              <label class="field-label">Motivo / Observación</label>
+              <input type="text" id="cashInitReason" required placeholder="Ej: Arraste automático">
+            </div>
+            <button type="submit" class="btn-stone">Guardar Caja Inicial</button>
+          </form>
+        </div>
+
+        <div class="card">
+          <h2 class="card-title">Registrar Salida de Caja</h2>
+          <form onsubmit="return registerCashOut(event);" class="space-y-sm">
+            <div>
+              <label class="field-label">Concepto / Motivo</label>
+              <input type="text" id="cashOutReason" required placeholder="Ej: Compra hielo">
+            </div>
+            <div>
+              <label class="field-label">Monto Retirado (ARS)</label>
+              <input type="number" id="cashOutAmount" required min="1" step="0.01" placeholder="Ej: 3500">
+            </div>
+            <button type="submit" class="btn-primary" style="background-color: #dc2626;">Registrar Salida</button>
+          </form>
+        </div>
+
+        <div class="card" style="background: #fffbeb; border: 1px solid #fde68a;">
+          <h2 class="card-title" style="font-size: 15px; color: #92400e; margin-bottom: 4px;">🔒 Cierre y Balance Diario</h2>
+          <form onsubmit="return closeDailyCash(event);" class="space-y-sm">
+            <div>
+              <label class="field-label">Efectivo Real Contado en Caja</label>
+              <input type="number" id="cashCountedReal" required min="0" step="0.01" placeholder="Ej: 45000">
+            </div>
+            <button type="submit" class="btn-amber-sm" style="width: 100%; padding: 10px; font-weight: 700;">Finalizar Cierre Diario</button>
+          </form>
+        </div>
+      </div>
+
+      <div class="col-main">
+        <div class="card">
+          <div class="card-header" style="overflow: hidden;">
+            <div style="float: left;">
+              <h2 class="card-title">Arqueo y Evolución de Caja</h2>
+              <p class="card-subtitle">Seguimiento diario de efectivo.</p>
+            </div>
+            <div style="float: right;">
+              <input type="date" id="cashFilterDateInput" onchange="renderCashSession()" class="input-ctrl" style="padding: 4px 8px; font-size: 12px;">
+            </div>
+          </div>
+
+          <div class="kpi-box-wrap">
+            <div class="kpi-item" style="background: #fafaf9;">
+              <p style="font-size: 10px; font-weight: 700; color: #78716c; text-transform: uppercase;">Caja Inicial</p>
+              <p id="kpiCashInit" style="font-size: 16px; font-weight: 800; margin-top: 2px;">$ 0,00</p>
+            </div>
+            <div class="kpi-item" style="background: #fafaf9;">
+              <p style="font-size: 10px; font-weight: 700; color: #78716c; text-transform: uppercase;">(+) Ventas Efectivo</p>
+              <p id="kpiCashSales" class="text-green" style="font-size: 16px; font-weight: 800; margin-top: 2px;">$ 0,00</p>
+            </div>
+            <div class="kpi-item" style="background: #fafaf9;">
+              <p style="font-size: 10px; font-weight: 700; color: #78716c; text-transform: uppercase;">(-) Salidas</p>
+              <p id="kpiCashOut" class="text-red" style="font-size: 16px; font-weight: 800; margin-top: 2px;">$ 0,00</p>
+            </div>
+            <div class="kpi-item" style="background: #fffbeb; border: 1px solid #fde68a;">
+              <p style="font-size: 10px; font-weight: 700; color: #92400e; text-transform: uppercase;">(=) Esperado</p>
+              <p id="kpiCashExpected" class="text-amber" style="font-size: 16px; font-weight: 800; margin-top: 2px;">$ 0,00</p>
+            </div>
+          </div>
+
+          <h3 class="card-title" style="font-size: 14px; margin-bottom: 8px;">Auditoría de Movimientos</h3>
+          <div class="table-wrap" style="max-height: 260px;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Fecha / Hora</th>
+                  <th>Operador</th>
+                  <th>Tipo</th>
+                  <th>Concepto</th>
+                  <th class="text-right">Monto</th>
+                  <th id="cashHeaderAction" class="text-center hidden">Admin</th>
+                </tr>
+              </thead>
+              <tbody id="cashMovementsBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="view-products" class="hidden row-grid">
+      <div class="col-side">
+        <div class="card">
+          <h2 class="card-title" style="margin-bottom: 16px;">Nuevo Producto</h2>
+          <form onsubmit="return saveProduct(event);" class="space-y-sm">
+            <div>
+              <label class="field-label">Nombre del Producto</label>
+              <input type="text" id="prodName" required placeholder="Ej: Café Doble">
+            </div>
+            <div>
+              <label class="field-label">Precio de Venta (ARS)</label>
+              <input type="number" id="prodPrice" required min="1" step="0.01" placeholder="Ej: 3500">
+            </div>
+            <div>
+              <label class="field-label">Tipo de Costeo y Stock</label>
+              <select id="prodType" onchange="toggleProductTypeUI()" class="input-ctrl">
+                <option value="recipe">Por Ingredientes / Receta (FIFO)</option>
+                <option value="unit">Por Unidad Directa (FIFO)</option>
+              </select>
+            </div>
+            <div id="recipeBuilder" class="recipe-box space-y-sm">
+              <p style="font-size: 12px; font-weight: 700; color: #78350f;">Receta:</p>
+              <div id="recipeRows" class="space-y-sm"></div>
+              <button type="button" onclick="addRecipeRow()" class="btn-amber-sm">+ Agregar Ingrediente</button>
+            </div>
+            <div id="unitInfoBox" class="info-box hidden">
+              Control por unidades enteras. Carga compras en la pestaña <strong>4</strong>.
+            </div>
+            <button type="submit" class="btn-stone">Guardar Producto</button>
+          </form>
+        </div>
+      </div>
+
+      <div class="col-main">
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">Listado de Productos y Márgenes</h2>
+            <p class="card-subtitle">Costos calculados por lotes FIFO vigentes.</p>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Producto</th>
+                  <th>Composición</th>
+                  <th class="text-right">Precio Venta</th>
+                  <th class="text-right">Costo FIFO</th>
+                  <th class="text-right">Margen</th>
+                  <th class="text-center">Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="productsTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="view-stock" class="hidden row-grid">
+      <div class="col-side space-y">
+        <div class="card">
+          <h2 class="card-title">Registrar Compra (Lote FIFO)</h2>
+          <form onsubmit="return registerPurchase(event);" class="space-y-sm">
+            <div>
+              <label class="field-label">Ítem Comprado</label>
+              <select id="purchaseItemSelect" required class="input-ctrl"></select>
+            </div>
+            <div>
+              <label class="field-label">Cantidad</label>
+              <input type="number" id="purchaseQty" required min="0.01" step="0.01" placeholder="Ej: 1000">
+            </div>
+            <div>
+              <label class="field-label">Costo Total (ARS)</label>
+              <input type="number" id="purchaseTotalCost" required min="0.01" step="0.01" placeholder="Ej: 100">
+            </div>
+            <button type="submit" class="btn-primary" style="padding: 10px;">+ Ingresar Lote</button>
+          </form>
+        </div>
+
+        <div class="card" style="border: 1px solid #fca5a5; background: #fff5f5;">
+          <h2 class="card-title" style="color: #991b1b;">🗑️ Registrar Desperdicio / Baja</h2>
+          <form onsubmit="return registerWaste(event);" class="space-y-sm">
+            <div>
+              <label class="field-label">Ítem</label>
+              <select id="wasteItemSelect" required class="input-ctrl"></select>
+            </div>
+            <div>
+              <label class="field-label">Cantidad a Desperdiciar</label>
+              <input type="number" id="wasteQty" required min="0.01" step="0.01" placeholder="Ej: 200">
+            </div>
+            <div>
+              <label class="field-label">Motivo</label>
+              <input type="text" id="wasteReason" required placeholder="Ej: Vencimiento / Rotura">
+            </div>
+            <button type="submit" class="btn-stone" style="background-color: #dc2626;">Registrar en P&L</button>
+          </form>
+        </div>
+
+        <div class="card">
+          <h2 class="card-title" style="font-size: 15px; margin-bottom: 6px;">Agregar Nuevo Ingrediente</h2>
+          <form onsubmit="return saveNewIngredient(event);" class="space-y-sm">
+            <div>
+              <label class="field-label">Nombre</label>
+              <input type="text" id="ingName" required placeholder="Ej: Azúcar">
+            </div>
+            <div>
+              <label class="field-label">Unidad</label>
+              <select id="ingUnit" class="input-ctrl">
+                <option value="g">Gramos (g)</option>
+                <option value="ml">Mililitros (ml)</option>
+                <option value="u">Unidades (u)</option>
+              </select>
+            </div>
+            <div>
+              <label class="field-label">Stock Mínimo</label>
+              <input type="number" id="ingMinStock" required min="0" value="200">
+            </div>
+            <button type="submit" class="btn-stone">Crear Ingrediente</button>
+          </form>
+        </div>
+      </div>
+
+      <div class="col-main space-y">
+        <div class="card">
+          <h2 class="card-title" style="margin-bottom: 16px;">Stock y Lotes Activos (FIFO)</h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Ítem</th>
+                  <th>Categoría</th>
+                  <th class="text-right">Stock</th>
+                  <th class="text-right">Valuación</th>
+                  <th>Lotes FIFO</th>
+                </tr>
+              </thead>
+              <tbody id="stockTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 class="card-title" style="font-size: 15px; margin-bottom: 12px;">Historial Desperdicios</h3>
+          <div class="table-wrap" style="max-height: 200px;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Operador</th>
+                  <th>Ítem</th>
+                  <th class="text-right">Cant</th>
+                  <th>Motivo</th>
+                  <th class="text-right">Costo</th>
+                </tr>
+              </thead>
+              <tbody id="wasteHistoryBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 class="card-title" style="font-size: 15px; margin-bottom: 12px;">Historial Compras</h3>
+          <div class="table-wrap" style="max-height: 200px;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Ítem</th>
+                  <th class="text-right">Comprado</th>
+                  <th class="text-right">Remanente</th>
+                  <th class="text-right">Total</th>
+                  <th class="text-right">Unitario</th>
+                </tr>
+              </thead>
+              <tbody id="purchasesHistoryBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="view-users" class="hidden row-grid">
+      <div class="col-side">
+        <div class="card">
+          <h2 class="card-title" style="margin-bottom: 16px;">Configurar Usuario</h2>
+          <form onsubmit="return saveUserAccount(event);" class="space-y-sm">
+            <div>
+              <label class="field-label">Usuario (Login)</label>
+              <input type="text" id="usrUsername" required placeholder="valeria" autocapitalize="none">
+            </div>
+            <div>
+              <label class="field-label">Nombre Visible</label>
+              <input type="text" id="usrFullName" required placeholder="Valeria Gómez">
+            </div>
+            <div>
+              <label class="field-label">Rol</label>
+              <select id="usrRole" onchange="togglePermissionsUI()" class="input-ctrl">
+                <option value="vendedor">Vendedor</option>
+                <option value="admin">Administrador</option>
+              </select>
+            </div>
+            
+            <div id="permissionsContainer">
+              <label class="field-label" style="margin-top: 8px;">Permisos:</label>
+              <div class="permissions-grid">
+                <label class="perm-item"><input type="checkbox" id="perm-pos" checked> POS</label>
+                <label class="perm-item"><input type="checkbox" id="perm-cash" checked> Caja</label>
+                <label class="perm-item"><input type="checkbox" id="perm-products"> Productos</label>
+                <label class="perm-item"><input type="checkbox" id="perm-stock"> Stock</label>
+                <label class="perm-item"><input type="checkbox" id="perm-users"> Usuarios</label>
+                <label class="perm-item"><input type="checkbox" id="perm-finance"> P&L</label>
+              </div>
+            </div>
+
+            <div>
+              <label class="field-label">Contraseña</label>
+              <input type="password" id="usrPassword" required placeholder="••••••••">
+            </div>
+            <button type="submit" class="btn-stone">Guardar Usuario</button>
+          </form>
+        </div>
+      </div>
+
+      <div class="col-main">
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">Usuarios del Sistema</h2>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Usuario</th>
+                  <th>Nombre</th>
+                  <th>Rol</th>
+                  <th>Permisos</th>
+                  <th class="text-center">Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="usersTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="view-finance" class="hidden">
+      <div class="kpi-box-wrap">
+        <div class="kpi-5">
+          <p style="font-size: 11px; font-weight: 700; color: #78716c; text-transform: uppercase;">Ventas</p>
+          <p id="kpiRevenue" style="font-size: 18px; font-weight: 800; margin-top: 4px;">$ 0,00</p>
+        </div>
+        <div class="kpi-5">
+          <p style="font-size: 11px; font-weight: 700; color: #78716c; text-transform: uppercase;">CMV FIFO</p>
+          <p id="kpiCogs" class="text-amber" style="font-size: 18px; font-weight: 800; margin-top: 4px;">$ 0,00</p>
+        </div>
+        <div class="kpi-5">
+          <p style="font-size: 11px; font-weight: 700; color: #78716c; text-transform: uppercase;">Desperdicios</p>
+          <p id="kpiWaste" class="text-red" style="font-size: 18px; font-weight: 800; margin-top: 4px;">$ 0,00</p>
+        </div>
+        <div class="kpi-5">
+          <p style="font-size: 11px; font-weight: 700; color: #78716c; text-transform: uppercase;">Costos Fijos</p>
+          <p id="kpiFixed" class="text-red" style="font-size: 18px; font-weight: 800; margin-top: 4px;">$ 0,00</p>
+        </div>
+        <div class="kpi-5">
+          <p style="font-size: 11px; font-weight: 700; color: #78716c; text-transform: uppercase;">Resultado Neto</p>
+          <p id="kpiNet" class="text-green" style="font-size: 18px; font-weight: 800; margin-top: 4px;">$ 0,00</p>
+        </div>
+      </div>
+
+      <div class="row-grid">
+        <div class="col-half-left">
+          <div class="card">
+            <h2 class="card-title" style="margin-bottom: 16px;">Estado de Resultados</h2>
+            <table>
+              <tbody>
+                <tr>
+                  <td style="font-weight: 600;">Ventas Brutas</td>
+                  <td id="pnlSales" class="text-right" style="font-weight: 700;">$ 0,00</td>
+                </tr>
+                <tr>
+                  <td class="text-muted">(-) CMV FIFO</td>
+                  <td id="pnlCogs" class="text-right text-red">$ 0,00</td>
+                </tr>
+                <tr style="background-color: #fafaf9; font-weight: 700;">
+                  <td>(=) Margen Bruto</td>
+                  <td id="pnlGross" class="text-right">$ 0,00</td>
+                </tr>
+                <tr>
+                  <td class="text-muted">(-) Desperdicios</td>
+                  <td id="pnlWaste" class="text-right text-red">$ 0,00</td>
+                </tr>
+                <tr>
+                  <td class="text-muted">(-) Costos Fijos</td>
+                  <td id="pnlFixed" class="text-right text-red">$ 0,00</td>
+                </tr>
+                <tr style="background-color: #fffbeb; font-weight: 800; font-size: 15px;">
+                  <td>(=) Utilidad Neta</td>
+                  <td id="pnlNet" class="text-right">$ 0,00</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="col-half-right space-y">
+          <div class="card">
+            <h2 class="card-title" style="font-size: 15px; margin-bottom: 12px;">Libro de Balance</h2>
+            <div class="balance-asset">
+              <h3 style="font-size: 11px; font-weight: 700; color: #065f46; text-transform: uppercase; margin-bottom: 8px;">Activos</h3>
+              <div style="font-size: 12px;">
+                <div style="overflow: hidden; margin-bottom: 4px;"><span style="float: left;">Caja y Bancos:</span><strong id="balCash" style="float: right;">$ 0,00</strong></div>
+                <div style="overflow: hidden; margin-bottom: 4px;"><span style="float: left;">Inventario FIFO:</span><strong id="balInventory" style="float: right;">$ 0,00</strong></div>
+                <div style="overflow: hidden; border-top: 1px solid #a7f3d0; padding-top: 6px; font-weight: 800;"><span style="float: left;">Total Activo:</span><span id="balTotalAssets" style="float: right;">$ 0,00</span></div>
+              </div>
+            </div>
+            <div class="balance-equity">
+              <h3 style="font-size: 11px; font-weight: 700; color: #292524; text-transform: uppercase; margin-bottom: 8px;">Pasivo + PN</h3>
+              <div style="font-size: 12px;">
+                <div style="overflow: hidden; margin-bottom: 4px;"><span style="float: left;">Capital Compras:</span><strong id="balCapital" style="float: right;">$ 0,00</strong></div>
+                <div style="overflow: hidden; margin-bottom: 4px;"><span style="float: left;">Resultado:</span><strong id="balRetained" style="float: right;">$ 0,00</strong></div>
+                <div style="overflow: hidden; border-top: 1px solid #d6d3d1; padding-top: 6px; font-weight: 800;"><span style="float: left;">Total Pasivo + PN:</span><span id="balTotalEquity" style="float: right;">$ 0,00</span></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <h2 class="card-title" style="font-size: 15px; margin-bottom: 12px;">Costos Fijos</h2>
+            <form onsubmit="return addFixedCost(event);" style="margin-bottom: 12px;">
+              <input type="text" id="fixedName" required placeholder="Concepto (ej: Alquiler)" style="margin-bottom: 8px;">
+              <input type="number" id="fixedAmount" required min="1" step="0.01" placeholder="Monto ARS" style="margin-bottom: 8px;">
+              <button type="submit" class="btn-stone">Agregar Costo Fijo</button>
+            </form>
+            <div class="table-wrap" style="max-height: 180px;">
+              <table>
+                <tbody id="fixedCostsBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    var STORAGE_KEY = 'cafeteria_pos_ars_v5';
+    var SESSION_USER_KEY = 'cafeteria_current_logged_user_id';
+
+    // COMPLETAR CON TU GIST_ID Y GITHUB_TOKEN
+    var GIST_ID = '';
+    var GITHUB_TOKEN = '';
+
+    var defaultData = {
+      orderCounter: 1,
+      users: [
+        { id: 'u_admin', username: 'admin', fullName: 'Administrador General', role: 'admin', pass: 'admin123', permissions: ['pos', 'cash', 'products', 'stock', 'users', 'finance'] },
+        { id: 'u_vendedor', username: 'vendedor', fullName: 'Vendedor de Turno', role: 'vendedor', pass: 'vendedor123', permissions: ['pos', 'cash'] }
+      ],
+      ingredients: [
+        { id: 'ing_cafe', name: 'Café en Grano', unit: 'g', minStock: 300 },
+        { id: 'ing_leche', name: 'Leche Entera', unit: 'ml', minStock: 2000 }
+      ],
+      products: [
+        { id: 'prod_espresso', name: 'Café Espresso (20g)', price: 2500, type: 'recipe', recipe: [{ ingredientId: 'ing_cafe', qty: 20 }] },
+        { id: 'prod_latte', name: 'Café con Leche / Latte', price: 3400, type: 'recipe', recipe: [{ ingredientId: 'ing_cafe', qty: 20 }, { ingredientId: 'ing_leche', qty: 180 }] },
+        { id: 'prod_medialuna', name: 'Medialuna de Manteca', price: 1800, type: 'unit', minStock: 5, recipe: [] }
+      ],
+      batches: [
+        { id: 'b1', itemType: 'ingredient', itemId: 'ing_cafe', initialQty: 1000, remainingQty: 1000, totalCost: 100, unitCost: 0.10, date: '16/11/2026 08:00' },
+        { id: 'b2', itemType: 'ingredient', itemId: 'ing_leche', initialQty: 5000, remainingQty: 5000, totalCost: 7500, unitCost: 1.50, date: '16/11/2026 08:05' },
+        { id: 'b3', itemType: 'product', itemId: 'prod_medialuna', initialQty: 30, remainingQty: 30, totalCost: 15000, unitCost: 500, date: '16/11/2026 08:10' }
+      ],
+      openOrders: [],
+      sales: [],
+      wastes: [],
+      fixedCosts: [
+        { id: 'fc1', name: 'Alquiler Local', amount: 450000 },
+        { id: 'fc2', name: 'Servicios', amount: 65000 }
+      ],
+      cashMovements: []
+    };
+
+    var state = JSON.parse(JSON.stringify(defaultData));
+    var selectedPayment = 'Efectivo';
+    var activeOrder = createEmptyOrderDraft();
+
+    function createEmptyOrderDraft() {
+      return { id: null, number: null, startTime: nowStr(), customer: '', comment: '', items: [], discount: null };
+    }
+
+    function ensureDataIntegrity() {
+      if (!state.cashMovements) state.cashMovements = [];
+      if (!state.wastes) state.wastes = [];
+      if (!state.openOrders) state.openOrders = [];
+      if (!state.ingredients) state.ingredients = [];
+      if (!state.products) state.products = [];
+      if (!state.batches) state.batches = [];
+      if (!state.sales) state.sales = [];
+      if (!state.fixedCosts) state.fixedCosts = [];
+      if (!state.orderCounter) state.orderCounter = state.sales.length + 1;
+      if (!state.users || state.users.length === 0) {
+        state.users = JSON.parse(JSON.stringify(defaultData.users));
+      }
+      for (var i = 0; i < state.users.length; i++) {
+        var u = state.users[i];
+        if (!u.permissions) {
+          u.permissions = (u.role === 'admin') ? ['pos', 'cash', 'products', 'stock', 'users', 'finance'] : ['pos', 'cash'];
+        }
+      }
+    }
+
+    function loadStateWithCallback(callback) {
+      var badge = document.getElementById('cloudSyncBadge');
+      var loginStatus = document.getElementById('syncStatusLogin');
+
+      if (GIST_ID && GITHUB_TOKEN) {
+        if (badge) badge.textContent = '☁️ Sincronizando...';
+        if (loginStatus) loginStatus.textContent = 'Conectando con la nube...';
+
+        var xhr = new XMLHttpRequest();
+        var url = 'https://api.github.com/gists/' + GIST_ID + '?t=' + new Date().getTime();
+        xhr.open('GET', url, true);
+        xhr.setRequestHeader('Authorization', 'token ' + GITHUB_TOKEN);
+
+        xhr.onreadystatechange = function() {
+          if (xhr.readyState === 4) {
+            if (xhr.status >= 200 && xhr.status < 300) {
+              try {
+                var data = JSON.parse(xhr.responseText);
+                if (data.files && data.files['db.json'] && data.files['db.json'].content) {
+                  var parsed = JSON.parse(data.files['db.json'].content);
+                  if (parsed && typeof parsed === 'object') {
+                    state = parsed;
+                    ensureDataIntegrity();
+                    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {}
+                    if (badge) badge.textContent = '☁️ En línea';
+                    if (loginStatus) loginStatus.textContent = 'Base conectada (' + state.users.length + ' usuarios)';
+                    if (callback) callback(true);
+                    return;
+                  }
+                }
+              } catch (parseErr) {
+                if (badge) badge.textContent = '⚠️ Error JSON';
+              }
+            } else {
+              if (badge) badge.textContent = '⚠️ Offline (' + xhr.status + ')';
+              if (loginStatus) loginStatus.textContent = 'Modo local (Error red: ' + xhr.status + ')';
+            }
+            loadFromLocalFallback();
+            if (callback) callback(false);
+          }
+        };
+
+        xhr.onerror = function() {
+          if (badge) badge.textContent = '⚠️ Sin red';
+          if (loginStatus) loginStatus.textContent = 'Sin conexión, usando respaldo local';
+          loadFromLocalFallback();
+          if (callback) callback(false);
+        };
+
+        xhr.send();
+      } else {
+        loadFromLocalFallback();
+        if (badge) badge.textContent = '💾 Solo Local';
+        if (loginStatus) loginStatus.textContent = 'Modo local activo (sin Gist configurado)';
+        if (callback) callback(true);
+      }
+    }
+
+    function loadFromLocalFallback() {
+      try {
+        var saved = localStorage.getItem(STORAGE_KEY) || localStorage.getItem('cafeteria_pos_ars_v4');
+        if (saved) {
+          state = JSON.parse(saved);
+        }
+      } catch (e) {}
+      ensureDataIntegrity();
+    }
+
+    function saveState() {
+      var stateToSave = JSON.parse(JSON.stringify(state));
+      delete stateToSave.currentLoggedInUserId;
+
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(stateToSave));
+      } catch (e) {}
+
+      if (GIST_ID && GITHUB_TOKEN) {
+        var badge = document.getElementById('cloudSyncBadge');
+        if (badge) badge.textContent = '☁️ Guardando...';
+
+        var xhr = new XMLHttpRequest();
+        xhr.open('PATCH', 'https://api.github.com/gists/' + GIST_ID, true);
+        xhr.setRequestHeader('Authorization', 'token ' + GITHUB_TOKEN);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+
+        xhr.onreadystatechange = function() {
+          if (xhr.readyState === 4) {
+            if (xhr.status >= 200 && xhr.status < 300) {
+              if (badge) badge.textContent = '☁️ Sincronizado';
+            } else {
+              if (badge) badge.textContent = '⚠️ Error al guardar';
+            }
+          }
+        };
+
+        var payload = JSON.stringify({
+          description: 'CaféControl POS - Actualización automática',
+          files: {
+            'db.json': {
+              content: JSON.stringify(stateToSave, null, 2)
+            }
+          }
+        });
+
+        xhr.send(payload);
+      }
+    }
+
+    function manualSyncFromCloud() {
+      loadStateWithCallback(function() {
+        renderAllViews();
+      });
+    }
+
+    function pad2(n) {
+      return n < 10 ? '0' + n : '' + n;
+    }
+
+    function formatARS(num) {
+      var val = Number(num || 0).toFixed(2);
+      var parts = val.split('.');
+      parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+      return '$ ' + parts[0] + ',' + parts[1];
+    }
+
+    function nowStr() {
+      var d = new Date();
+      return pad2(d.getDate()) + '/' + pad2(d.getMonth() + 1) + '/' + d.getFullYear() + ' ' + pad2(d.getHours()) + ':' + pad2(d.getMinutes());
+    }
+
+    function getTodayInputStr() {
+      var d = new Date();
+      return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
+    }
+
+    function getPreviousDayClosingBalance(targetDateStr) {
+      var parts = targetDateStr.split('/');
+      var targetDateObj = new Date(Number(parts[2]), Number(parts[1]) - 1, Number(parts[0]));
+      
+      for (var i = 1; i <= 30; i++) {
+        targetDateObj.setDate(targetDateObj.getDate() - 1);
+        var prevDateStr = pad2(targetDateObj.getDate()) + '/' + pad2(targetDateObj.getMonth() + 1) + '/' + targetDateObj.getFullYear();
+
+        var prevMovements = [];
+        for (var j = 0; j < state.cashMovements.length; j++) {
+          if (state.cashMovements[j].date && state.cashMovements[j].date.indexOf(prevDateStr) === 0) {
+            prevMovements.push(state.cashMovements[j]);
+          }
+        }
+
+        if (prevMovements.length > 0) {
+          var init = 0, sales = 0, outs = 0;
+          for (var k = 0; k < prevMovements.length; k++) {
+            var m = prevMovements[k];
+            if (m.type === 'INICIAL') init = m.amount;
+            if (m.type === 'VENTA_EFECTIVO') sales += m.amount;
+            if (m.type === 'SALIDA') outs += m.amount;
+          }
+          return init + sales - outs;
+        }
+      }
+      return 15000;
+    }
+
+    function openLoginModal() {
+      document.getElementById('loginUsernameInput').value = '';
+      document.getElementById('loginPassword').value = '';
+      document.getElementById('loginModal').className = 'modal-overlay';
+    }
+
+    function handleLogin(e) {
+      if (e && e.preventDefault) e.preventDefault();
+
+      var btn = document.getElementById('loginSubmitBtn');
+      var typedUser = document.getElementById('loginUsernameInput').value.replace(/^\s+|\s+$/g, '').toLowerCase();
+      var pass = document.getElementById('loginPassword').value;
+
+      if (!typedUser || !pass) {
+        alert('Completá usuario y contraseña.');
+        return false;
+      }
+
+      btn.disabled = true;
+      btn.innerHTML = 'Verificando...';
+
+      loadStateWithCallback(function() {
+        btn.disabled = false;
+        btn.innerHTML = 'Ingresar al Sistema';
+
+        var matchedUser = null;
+        for (var i = 0; i < state.users.length; i++) {
+          var u = state.users[i];
+          var uName = (u.username || '').replace(/^\s+|\s+$/g, '').toLowerCase();
+          if (uName === typedUser && u.pass === pass) {
+            matchedUser = u;
+            break;
+          }
+        }
+
+        if (!matchedUser) {
+          alert('❌ Usuario o contraseña incorrectos.');
+          return;
+        }
+
+        try {
+          localStorage.setItem(SESSION_USER_KEY, matchedUser.id);
+        } catch (err) {}
+
+        document.getElementById('loginModal').className = 'modal-overlay hidden';
+        document.getElementById('loginUsernameInput').value = '';
+        document.getElementById('loginPassword').value = '';
+
+        applyRolePermissions();
+        renderAllViews();
+      });
+
+      return false;
+    }
+
+    function getCurrentUser() {
+      var savedUserId = null;
+      try {
+        savedUserId = localStorage.getItem(SESSION_USER_KEY);
+      } catch (e) {}
+
+      if (!savedUserId) return null;
+
+      for (var i = 0; i < state.users.length; i++) {
+        if (state.users[i].id === savedUserId) {
+          return state.users[i];
+        }
+      }
+      return null;
+    }
+
+    function hasPermission(tabKey) {
+      var user = getCurrentUser();
+      if (!user) return false;
+      if (user.role === 'admin') return true;
+      if (!user.permissions) return false;
+      return user.permissions.indexOf(tabKey) !== -1;
+    }
+
+    function applyRolePermissions() {
+      var user = getCurrentUser();
+      if (!user) {
+        openLoginModal();
+        return;
+      }
+
+      var roleTag = (user.role === 'admin') ? '🔑 Admin' : '👤 Vendedor';
+      document.getElementById('activeUserLabel').innerHTML = user.fullName + ' (' + roleTag + ')';
+
+      var tabs = ['pos', 'cash', 'products', 'stock', 'users', 'finance'];
+      var firstAllowedTab = null;
+
+      for (var i = 0; i < tabs.length; i++) {
+        var t = tabs[i];
+        var btn = document.getElementById('tab-' + t);
+        if (hasPermission(t)) {
+          btn.className = btn.className.replace(/ hidden /g, '');
+          if (!firstAllowedTab) firstAllowedTab = t;
+        } else {
+          if (btn.className.indexOf('hidden') === -1) {
+            btn.className += ' hidden';
+          }
+        }
+      }
+
+      var activeFound = false;
+      for (var j = 0; j < tabs.length; j++) {
+        var sec = document.getElementById('view-' + tabs[j]);
+        if (sec.className.indexOf('hidden') === -1 && hasPermission(tabs[j])) {
+          activeFound = true;
+          break;
+        }
+      }
+
+      if (!activeFound && firstAllowedTab) {
+        switchTab(firstAllowedTab);
+      }
+    }
+
+    function getFifoUnitCost(itemType, itemId, neededQty) {
+      if (neededQty === undefined) neededQty = 1;
+      var batches = [];
+      for (var i = 0; i < state.batches.length; i++) {
+        var b = state.batches[i];
+        if (b.itemType === itemType && b.itemId === itemId && b.remainingQty > 0) {
+          batches.push(b);
+        }
+      }
+      if (batches.length === 0) return 0;
+
+      var remainingToPrice = neededQty;
+      var accumulatedCost = 0;
+
+      for (var j = 0; j < batches.length; j++) {
+        if (remainingToPrice <= 0) break;
+        var batch = batches[j];
+        var take = Math.min(batch.remainingQty, remainingToPrice);
+        accumulatedCost += take * batch.unitCost;
+        remainingToPrice -= take;
+      }
+
+      if (remainingToPrice > 0) {
+        var lastBatch = batches[batches.length - 1];
+        accumulatedCost += remainingToPrice * lastBatch.unitCost;
+      }
+
+      return accumulatedCost;
+    }
+
+    function consumeFifoStock(itemType, itemId, qtyToConsume) {
+      var batches = [];
+      var allItemBatches = [];
+      for (var i = 0; i < state.batches.length; i++) {
+        var b = state.batches[i];
+        if (b.itemType === itemType && b.itemId === itemId) {
+          allItemBatches.push(b);
+          if (b.remainingQty > 0) batches.push(b);
+        }
+      }
+
+      var remaining = qtyToConsume;
+      var realCost = 0;
+
+      for (var j = 0; j < batches.length; j++) {
+        if (remaining <= 0) break;
+        var batch = batches[j];
+        var take = Math.min(batch.remainingQty, remaining);
+        batch.remainingQty = Number((batch.remainingQty - take).toFixed(4));
+        realCost += take * batch.unitCost;
+        remaining = Number((remaining - take).toFixed(4));
+      }
+
+      if (remaining > 0 && allItemBatches.length > 0) {
+        realCost += remaining * allItemBatches[allItemBatches.length - 1].unitCost;
+      }
+
+      return realCost;
+    }
+
+    function getProductCurrentFifoCost(product) {
+      if (product.type === 'unit') {
+        return getFifoUnitCost('product', product.id, 1);
+      } else {
+        var sum = 0;
+        for (var i = 0; i < product.recipe.length; i++) {
+          var item = product.recipe[i];
+          sum += getFifoUnitCost('ingredient', item.ingredientId, item.qty);
+        }
+        return sum;
+      }
+    }
+
+    function getAvailableStock(itemType, itemId) {
+      var sum = 0;
+      for (var i = 0; i < state.batches.length; i++) {
+        var b = state.batches[i];
+        if (b.itemType === itemType && b.itemId === itemId) {
+          sum += b.remainingQty;
+        }
+      }
+      return sum;
+    }
+
+    function switchTab(tabName) {
+      if (!hasPermission(tabName)) {
+        alert('⛔ Acceso restringido.');
+        return;
+      }
+
+      var tabs = ['pos', 'cash', 'products', 'stock', 'users', 'finance'];
+      for (var i = 0; i < tabs.length; i++) {
+        var t = tabs[i];
+        var sec = document.getElementById('view-' + t);
+        var btn = document.getElementById('tab-' + t);
+        if (t === tabName) {
+          sec.className = sec.className.replace(/ hidden /g, '');
+          if (btn.className.indexOf('tab-active') === -1) btn.className += ' tab-active';
+        } else {
+          if (sec.className.indexOf('hidden') === -1) sec.className += ' hidden';
+          btn.className = btn.className.replace(/ tab-active /g, '');
+        }
+      }
+      renderAllViews();
+    }
+
+    function switchPosSubtab(subtab) {
+      var btnPed = document.getElementById('subtab-pedidos');
+      var btnHis = document.getElementById('subtab-historial');
+      var viewPed = document.getElementById('pos-subview-pedidos');
+      var viewHis = document.getElementById('pos-subview-historial');
+
+      if (subtab === 'pedidos') {
+        btnPed.className = 'pos-subtab-btn active';
+        btnHis.className = 'pos-subtab-btn';
+        viewPed.className = 'pos-panel-body';
+        viewHis.className = 'pos-panel-body hidden space-y';
+      } else {
+        btnHis.className = 'pos-subtab-btn active';
+        btnPed.className = 'pos-subtab-btn';
+        viewHis.className = 'pos-panel-body space-y';
+        viewPed.className = 'pos-panel-body hidden';
+        renderOpenOrdersTable();
+        renderSalesHistory();
+      }
+    }
+
+    function startNewOrder() {
+      activeOrder = createEmptyOrderDraft();
+      document.getElementById('discountDrawer').className = 'discount-panel hidden';
+      switchPosSubtab('pedidos');
+      renderCart();
+    }
+
+    function syncCurrentOrderMeta() {
+      activeOrder.customer = document.getElementById('ticketCustomer').value;
+      activeOrder.comment = document.getElementById('ticketComment').value;
+      if (activeOrder.id) {
+        saveState();
+        renderOpenOrdersTable();
+      }
+    }
+
+    function renderPOS() {
+      var grid = document.getElementById('posProductGrid');
+      var query = document.getElementById('posSearchInput').value.replace(/^\s+|\s+$/g, '').toLowerCase();
+      var filteredProds = [];
+
+      for (var i = 0; i < state.products.length; i++) {
+        if (state.products[i].name.toLowerCase().indexOf(query) !== -1) {
+          filteredProds.push(state.products[i]);
+        }
+      }
+
+      if (filteredProds.length === 0) {
+        grid.innerHTML = '<p class="text-muted" style="font-size: 13px; padding: 16px;">No se encontraron productos.</p>';
+      } else {
+        var html = '';
+        for (var j = 0; j < filteredProds.length; j++) {
+          var p = filteredProds[j];
+          var stockLabel = '';
+          if (p.type === 'unit') {
+            var stk = getAvailableStock('product', p.id);
+            var minS = p.minStock !== undefined ? p.minStock : 5;
+            var cls = stk <= minS ? 'text-red' : '';
+            var fw = stk <= minS ? '700' : '400';
+            stockLabel = '<span class="' + cls + '" style="font-weight:' + fw + ';">Stock: ' + stk + ' u</span>';
+          } else {
+            stockLabel = '<span class="text-amber">Receta (' + p.recipe.length + ' ins.)</span>';
+          }
+          html += '<button type="button" onclick="addToCart(\'' + p.id + '\')" class="pos-item">' +
+                    '<div class="pos-item-name">' + p.name + '</div>' +
+                    '<div class="pos-item-meta">' + stockLabel +
