@@ -1,0 +1,3043 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>CaféControl POS v7</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, sans-serif; background-color: #f5f5f4; color: #292524; min-height: 100vh; line-height: 1.4; }
+    
+    /* Header & Nav Fijos (Compatible iOS 9 / Safari antiguo) */
+    header { position: -webkit-sticky; position: sticky; top: 0; z-index: 1000; background-color: #1c1917; color: #ffffff; box-shadow: 0 2px 4px rgba(0,0,0,0.12); width: 100%; }
+    .header-inner { max-width: 1280px; margin: 0 auto; padding: 12px 16px; overflow: hidden; }
+    .brand { float: left; }
+    .brand-icon { font-size: 24px; float: left; margin-right: 10px; }
+    .brand-text { float: left; }
+    .brand h1 { font-size: 18px; font-weight: 700; line-height: 1.2; }
+    .brand p { font-size: 12px; color: #a8a29e; }
+    
+    .header-right { float: right; text-align: right; }
+    .user-box { display: inline-block; background-color: #292524; padding: 6px 12px; border-radius: 8px; border: 1px solid #44403c; vertical-align: middle; margin-right: 6px; margin-bottom: 4px; }
+    .user-box span { font-size: 11px; color: #a8a29e; text-transform: uppercase; font-weight: 600; }
+    
+    .backup-actions { display: inline-block; vertical-align: middle; margin-bottom: 4px; }
+    .btn-dark { font-size: 12px; background-color: #44403c; color: #ffffff; border: none; padding: 7px 11px; border-radius: 6px; cursor: pointer; display: inline-block; margin-left: 4px; font-weight: 600; }
+    .btn-dark:hover { background-color: #57534e; }
+    .btn-git { background-color: #059669; color: #ffffff; }
+    .btn-git:hover { background-color: #047857; }
+    .hidden { display: none !important; }
+
+    @media (max-width: 768px) {
+      .brand, .header-right { float: none; width: 100%; text-align: left; }
+      .header-right { margin-top: 8px; }
+    }
+    
+    nav { background-color: #ffffff; border-bottom: 1px solid #e7e5e4; width: 100%; clear: both; }
+    .nav-inner { max-width: 1280px; margin: 0 auto; padding: 0 16px; overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch; }
+    .nav-btn { background: none; border: none; border-bottom: 3px solid transparent; padding: 12px 10px; font-size: 14px; color: #57534e; cursor: pointer; display: inline-block; margin-right: 12px; }
+    .nav-btn:hover { color: #1c1917; }
+    .tab-active { border-bottom: 3px solid #d97706; color: #b45309; font-weight: 700; }
+    
+    /* Main Layout (Float-based para compatibilidad total iOS 9) */
+    main { max-width: 1280px; margin: 0 auto; padding: 20px 16px; width: 100%; }
+    .row-grid:after, .kpi-wrap:after, .pos-grid:after, .form-row-2:after { content: ""; display: table; clear: both; }
+    
+    @media (min-width: 960px) {
+      .col-pos-left { float: left; width: 61%; padding-right: 20px; }
+      .col-pos-right { float: left; width: 39%; }
+      .col-side { float: left; width: 34%; padding-right: 20px; }
+      .col-main { float: left; width: 66%; }
+      .col-half-left { float: left; width: 50%; padding-right: 12px; }
+      .col-half-right { float: left; width: 50%; padding-left: 12px; }
+    }
+    @media (max-width: 959px) {
+      .col-pos-left, .col-pos-right, .col-side, .col-main, .col-half-left, .col-half-right { width: 100%; margin-bottom: 20px; }
+    }
+
+    .kpi-wrap { margin-bottom: 20px; }
+    .kpi-4 { float: left; width: 24%; margin-right: 1.33%; background-color: #ffffff; border-radius: 10px; border: 1px solid #e7e5e4; padding: 12px; margin-bottom: 8px; }
+    .kpi-4:last-child { margin-right: 0; }
+    .kpi-5 { float: left; width: 19%; margin-right: 1.25%; background-color: #ffffff; border-radius: 10px; border: 1px solid #e7e5e4; padding: 14px; margin-bottom: 8px; }
+    .kpi-5:last-child { margin-right: 0; }
+    @media (max-width: 768px) {
+      .kpi-4, .kpi-5 { width: 48%; margin-right: 2%; }
+    }
+
+    .space-y > * + * { margin-top: 20px; }
+    .space-y-sm > * + * { margin-top: 10px; }
+    
+    /* Cards & Panels */
+    .card { background-color: #ffffff; border-radius: 12px; border: 1px solid #e7e5e4; box-shadow: 0 1px 2px rgba(0,0,0,0.04); padding: 20px; margin-bottom: 20px; }
+    .card-header { margin-bottom: 16px; overflow: hidden; }
+    .card-title { font-size: 17px; font-weight: 700; color: #1c1917; }
+    .card-subtitle { font-size: 12px; color: #78716c; margin-top: 2px; }
+    
+    /* POS Subtabs */
+    .pos-subnav { background: #292524; padding: 8px 14px; border-radius: 10px 10px 0 0; overflow: hidden; }
+    .pos-subtabs { float: left; }
+    .pos-subtab-btn { background: transparent; color: #d6d3d1; border: none; padding: 8px 14px; border-radius: 6px; font-size: 13px; font-weight: 700; cursor: pointer; margin-right: 4px; }
+    .pos-subtab-btn.active { background: #ffffff; color: #1c1917; }
+    .pos-panel-body { background: #ffffff; border: 1px solid #e7e5e4; border-top: none; border-radius: 0 0 12px 12px; padding: 16px; }
+
+    /* POS Product Grid */
+    .pos-item { float: left; width: 31.33%; margin: 1%; background-color: #ffffff; border: 1px solid #e7e5e4; border-left: 4px solid #d97706; border-radius: 10px; padding: 12px; text-align: left; cursor: pointer; min-height: 92px; box-shadow: 0 1px 2px rgba(0,0,0,0.03); }
+    .pos-item:active { background-color: #fffbeb; border-color: #fbbf24; }
+    @media (max-width: 600px) { .pos-item { width: 48%; } }
+    .pos-item-name { font-weight: 700; font-size: 13px; color: #292524; }
+    .pos-item-meta { font-size: 11px; margin-top: 4px; color: #78716c; }
+    .pos-item-price { margin-top: 8px; font-size: 15px; font-weight: 800; color: #b45309; }
+    
+    /* Ticket / Comanda lateral */
+    .sticky-card { padding: 0; overflow: hidden; }
+    .ticket-top-bar { background: #ea580c; color: #ffffff; padding: 12px 16px; overflow: hidden; }
+    .ticket-top-bar.new-order { background: #292524; }
+    .ticket-meta { padding: 12px 16px; background: #fafaf9; border-bottom: 1px solid #e7e5e4; font-size: 12px; }
+    .ticket-meta-row { margin-bottom: 8px; }
+    .ticket-meta-row:last-child { margin-bottom: 0; }
+    .ticket-section-bar { background: #78716c; color: #ffffff; padding: 8px 16px; font-size: 12px; font-weight: 700; text-transform: uppercase; overflow: hidden; }
+    .cart-list { max-height: 250px; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 12px 16px; }
+    .cart-row { background-color: #ffffff; padding: 8px 10px; border-radius: 6px; border: 1px solid #e7e5e4; border-left: 3px solid #ea580c; margin-bottom: 8px; font-size: 13px; overflow: hidden; }
+    .btn-qty { width: 26px; height: 26px; border: none; border-radius: 4px; background-color: #e7e5e4; font-weight: 700; cursor: pointer; font-size: 14px; }
+
+    /* Panel Descuento */
+    .discount-panel { background-color: #fde047; border-top: 1px solid #eab308; border-bottom: 1px solid #eab308; padding: 14px 16px; }
+    .discount-panel-row { margin-bottom: 10px; font-size: 12px; font-weight: 600; color: #422006; }
+
+    .ticket-total-bar { background: #44403c; color: #ffffff; padding: 12px 16px; font-size: 18px; font-weight: 800; overflow: hidden; }
+    .ticket-actions-bar { padding: 12px 16px; background: #ffffff; }
+    .pay-btn { width: 31%; margin-right: 2%; padding: 10px 4px; border-radius: 6px; font-size: 12px; cursor: pointer; border: 1px solid #d6d3d1; background-color: #ffffff; }
+    .pay-btn:last-child { margin-right: 0; }
+    .pay-btn-active { border: 2px solid #d97706; background-color: #fffbeb; color: #92400e; font-weight: 700; }
+    
+    .order-row-active { background-color: #fef08a !important; }
+    .status-pill-open { border: 1px solid #ef4444; color: #dc2626; background: #fff; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; display: inline-block; }
+    .status-pill-closed { color: #059669; font-weight: 700; font-size: 12px; }
+
+    label.field-label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px; color: #44403c; }
+    input[type="text"], input[type="number"], input[type="password"], input[type="date"], select.input-ctrl, textarea.input-ctrl { width: 100%; border: 1px solid #d6d3d1; border-radius: 6px; padding: 8px 10px; font-size: 14px; background-color: #ffffff; font-family: inherit; -webkit-appearance: none; }
+    .form-half-left { float: left; width: 48%; }
+    .form-half-right { float: right; width: 48%; }
+    .btn-primary { width: 100%; background-color: #059669; color: #ffffff; border: none; font-weight: 700; padding: 11px; border-radius: 8px; font-size: 13px; cursor: pointer; }
+    .btn-stone { width: 100%; background-color: #1c1917; color: #ffffff; border: none; font-weight: 700; padding: 11px; border-radius: 8px; font-size: 13px; cursor: pointer; }
+    .btn-outline { background-color: #ffffff; color: #292524; border: 1px solid #d6d3d1; font-weight: 600; padding: 8px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; }
+    .btn-amber-sm { background-color: #d97706; color: #ffffff; border: none; padding: 6px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; }
+    .btn-xs { padding: 4px 8px; font-size: 11px; border-radius: 4px; border: 1px solid #d6d3d1; background: #fff; cursor: pointer; }
+    .btn-xs-danger { border-color: #fca5a5; color: #dc2626; background: #fff5f5; }
+    
+    .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; width: 100%; height: 100%; background: rgba(28, 25, 23, 0.88); z-index: 2000; padding: 16px; overflow-y: auto; }
+    .modal-card { background: #ffffff; width: 100%; max-width: 420px; margin: 36px auto; border-radius: 16px; padding: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+
+    .recipe-box { background-color: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 12px; }
+    .info-box { background-color: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 12px; font-size: 12px; color: #1e40af; }
+    .balance-asset { background-color: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 8px; padding: 12px; margin-bottom: 10px; }
+    .balance-equity { background-color: #fafaf9; border: 1px solid #e7e5e4; border-radius: 8px; padding: 12px; }
+    
+    .permissions-grid { background: #fafaf9; border: 1px solid #e7e5e4; border-radius: 8px; padding: 10px; }
+    .perm-item { display: inline-block; width: 48%; font-size: 12px; margin-bottom: 6px; cursor: pointer; }
+
+    .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; text-align: left; }
+    th { background-color: #fafaf9; color: #57534e; font-size: 11px; text-transform: uppercase; padding: 10px; border-bottom: 1px solid #e7e5e4; }
+    td { padding: 10px; border-bottom: 1px solid #f5f5f4; vertical-align: middle; }
+    .text-right { text-align: right; }
+    .text-center { text-align: center; }
+    .text-red { color: #dc2626; }
+    .text-green { color: #059669; }
+    .text-amber { color: #b45309; }
+    .text-muted { color: #78716c; }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; }
+    .badge-amber { background-color: #fef3c7; color: #92400e; }
+    .badge-blue { background-color: #dbeafe; color: #1e40af; }
+    .badge-gray { background-color: #f5f5f4; border: 1px solid #e7e5e4; color: #44403c; }
+    .badge-red { background-color: #fee2e2; color: #991b1b; }
+  </style>
+</head>
+<body>
+
+  <!-- MODAL DE INICIO DE SESIÓN (100% Instantáneo y Local para iOS 9) -->
+  <div id="loginModal" class="modal-overlay">
+    <div class="modal-card">
+      <div style="text-align: center; margin-bottom: 20px;">
+        <span style="font-size: 36px;">☕</span>
+        <h2 style="font-size: 20px; font-weight: 800; color: #1c1917; margin-top: 4px;">CaféControl POS v7</h2>
+        <p style="font-size: 12px; color: #78716c;">Ingresá tu usuario y contraseña para continuar</p>
+      </div>
+      <form id="loginForm" onsubmit="return handleLogin(event);" class="space-y-sm">
+        <div>
+          <label class="field-label">Usuario</label>
+          <input type="text" id="loginUsernameInput" required placeholder="Ej: admin" autocomplete="off" autocapitalize="none" autocorrect="off">
+        </div>
+        <div>
+          <label class="field-label">Contraseña</label>
+          <input type="password" id="loginPassword" required placeholder="••••••••">
+        </div>
+        <button type="submit" id="loginSubmitBtn" class="btn-stone" style="margin-top: 8px; padding: 12px;">Ingresar al Sistema</button>
+      </form>
+      <p style="margin-top: 12px; font-size: 11px; color: #78716c; text-align: center;">Modo Local Seguro (Compatible iPad / Safari iOS 9)</p>
+    </div>
+  </div>
+
+  <!-- MODAL DE EXPORTACIÓN / ACTUALIZACIÓN EN GITHUB -->
+  <div id="gitModal" class="modal-overlay hidden">
+    <div class="modal-card">
+      <h3 style="font-size: 18px; font-weight: 800; color: #1c1917; margin-bottom: 4px;">📤 Exportar y Actualizar en Git</h3>
+      <p style="font-size: 12px; color: #78716c; margin-bottom: 14px;">Sube el estado actual del POS directamente a tu repositorio en GitHub. Los datos se guardan solo en este navegador.</p>
+
+      <div class="space-y-sm">
+        <div class="form-row-2">
+          <div class="form-half-left">
+            <label class="field-label">Usuario / Owner</label>
+            <input type="text" id="gitOwnerInput" placeholder="ej: tu-usuario" autocapitalize="none" autocorrect="off">
+          </div>
+          <div class="form-half-right">
+            <label class="field-label">Repositorio</label>
+            <input type="text" id="gitRepoInput" placeholder="ej: cafecontrol-pos" autocapitalize="none" autocorrect="off">
+          </div>
+        </div>
+        <div class="form-row-2">
+          <div class="form-half-left">
+            <label class="field-label">Ruta del archivo</label>
+            <input type="text" id="gitPathInput" placeholder="data/db.json" autocapitalize="none" autocorrect="off">
+          </div>
+          <div class="form-half-right">
+            <label class="field-label">Rama (Branch)</label>
+            <input type="text" id="gitBranchInput" placeholder="main" autocapitalize="none" autocorrect="off">
+          </div>
+        </div>
+        <div>
+          <label class="field-label">GitHub Personal Access Token (permiso Contents: Write)</label>
+          <input type="password" id="gitTokenInput" placeholder="ghp_... (se guarda solo en este dispositivo)">
+        </div>
+      </div>
+
+      <div id="gitStatusMessage" style="margin-top: 12px; font-size: 12px; color: #44403c; background: #fafaf9; border: 1px solid #e7e5e4; border-radius: 6px; padding: 8px; display: none;"></div>
+
+      <div style="margin-top: 16px; overflow: hidden;">
+        <button type="button" onclick="closeGitModal()" class="btn-outline" style="float: left; width: 32%; padding: 10px;">Cerrar</button>
+        <button type="button" id="btnPushGit" onclick="pushBackupToGitHub()" class="btn-primary" style="float: right; width: 65%; padding: 10px;">⬆️ Subir ahora a GitHub</button>
+      </div>
+
+      <div style="margin-top: 14px; padding-top: 12px; border-top: 1px solid #e7e5e4; text-align: center;">
+        <button type="button" onclick="exportLocalJsonFallback()" class="btn-outline" style="width: 100%; font-size: 11px;">📋 Ver / Descargar JSON Local (Plan B sin red)</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL PARA COPIAR JSON MANUAL (iOS 9) -->
+  <div id="jsonTextModal" class="modal-overlay hidden">
+    <div class="modal-card">
+      <h3 style="font-size: 16px; font-weight: 800; margin-bottom: 6px;">📋 Respaldo JSON Local</h3>
+      <p style="font-size: 12px; color: #78716c; margin-bottom: 10px;">Copiá este texto o guardalo como <strong>backup.json</strong>:</p>
+      <textarea id="jsonRawTextarea" rows="8" class="input-ctrl" style="font-family: monospace; font-size: 11px;"></textarea>
+      <div style="margin-top: 12px; text-align: right;">
+        <button type="button" onclick="document.getElementById('jsonTextModal').className='modal-overlay hidden'" class="btn-stone">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL DE CIERRE / COBRO DE PEDIDO -->
+  <div id="closeOrderModal" class="modal-overlay hidden">
+    <div class="modal-card">
+      <h3 style="font-size: 18px; font-weight: 800; color: #1c1917; margin-bottom: 4px;">✅ Cerrar y Cobrar Pedido</h3>
+      <p id="closeOrderSummaryText" style="font-size: 12px; color: #78716c; margin-bottom: 16px;"></p>
+
+      <div style="background: #fafaf9; border: 1px solid #e7e5e4; border-radius: 8px; padding: 12px; margin-bottom: 14px; font-size: 13px;">
+        <div style="margin-bottom: 4px; overflow: hidden;">
+          <span style="float: left;">Subtotal:</span>
+          <strong id="modalSubtotal" style="float: right;">$ 0,00</strong>
+        </div>
+        <div id="modalDiscountRow" style="margin-bottom: 6px; color: #dc2626; overflow: hidden;" class="hidden">
+          <span id="modalDiscountLabel" style="float: left;">Descuento:</span>
+          <strong id="modalDiscountAmount" style="float: right;">- $ 0,00</strong>
+        </div>
+        <div style="border-top: 1px solid #d6d3d1; padding-top: 6px; font-size: 17px; font-weight: 800; color: #059669; overflow: hidden;">
+          <span style="float: left;">Total Final:</span>
+          <span id="modalFinalTotal" style="float: right;">$ 0,00</span>
+        </div>
+      </div>
+
+      <div style="margin-bottom: 16px;">
+        <label class="field-label">Seleccioná el Medio de Pago:</label>
+        <div style="margin-top: 6px;">
+          <button type="button" onclick="selectPayment('Efectivo')" id="pay-Efectivo" class="pay-btn pay-btn-active">💵 Efectivo</button>
+          <button type="button" onclick="selectPayment('Tarjeta')" id="pay-Tarjeta" class="pay-btn">💳 Tarjeta</button>
+          <button type="button" onclick="selectPayment('QR')" id="pay-QR" class="pay-btn">📱 QR</button>
+        </div>
+      </div>
+
+      <div style="overflow: hidden;">
+        <button type="button" onclick="closeCloseOrderModal()" class="btn-outline" style="float: left; width: 35%; padding: 10px;">Cancelar</button>
+        <button type="button" onclick="confirmCloseOrder()" class="btn-primary" style="float: right; width: 62%; padding: 10px;">Confirmar Cobro</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- BARRA SUPERIOR FIJA -->
+  <header>
+    <div class="header-inner">
+      <div class="brand">
+        <span class="brand-icon">☕</span>
+        <div class="brand-text">
+          <h1>CaféControl POS <span style="font-size: 11px; background: #d97706; color: #fff; padding: 2px 6px; border-radius: 4px; vertical-align: middle;">v7</span></h1>
+          <p>Gestión Integral · Valuación FIFO · Edición ES5</p>
+        </div>
+      </div>
+
+      <div class="header-right">
+        <div class="user-box">
+          <span id="activeUserLabel">Usuario: ...</span>
+          <button type="button" onclick="openLoginModal()" style="background:none; border:none; color:#fbbf24; font-weight:700; font-size:12px; cursor:pointer; text-decoration:underline; margin-left: 6px;">Cambiar</button>
+        </div>
+
+        <div class="backup-actions">
+          <button type="button" onclick="openGitModal()" class="btn-dark btn-git">📤 Exportar a Git</button>
+          <button type="button" onclick="exportLocalJsonFallback()" class="btn-dark">💾 JSON</button>
+          <label class="btn-dark" style="cursor: pointer;">
+            📂 Importar
+            <input type="file" id="importFile" accept=".json" onchange="importBackup(event)" class="hidden">
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <nav>
+      <div class="nav-inner" id="mainNavContainer">
+        <button type="button" onclick="switchTab('pos')" id="tab-pos" class="nav-btn tab-active">1. Punto de Venta (POS)</button>
+        <button type="button" onclick="switchTab('cash')" id="tab-cash" class="nav-btn">2. Arqueo de Caja</button>
+        <button type="button" onclick="switchTab('products')" id="tab-products" class="nav-btn">3. Productos y Costos</button>
+        <button type="button" onclick="switchTab('stock')" id="tab-stock" class="nav-btn">4. Stock y Compras (FIFO)</button>
+        <button type="button" onclick="switchTab('users')" id="tab-users" class="nav-btn">5. Usuarios</button>
+        <button type="button" onclick="switchTab('finance')" id="tab-finance" class="nav-btn">6. Balance y P&L</button>
+      </div>
+    </nav>
+  </header>
+
+  <main>
+    <!-- SECCIÓN 1: PUNTO DE VENTA (POS) -->
+    <section id="view-pos" class="row-grid">
+      <div class="col-pos-left">
+        <div class="pos-subnav">
+          <div class="pos-subtabs">
+            <button type="button" id="subtab-pedidos" onclick="switchPosSubtab('pedidos')" class="pos-subtab-btn active">Pedidos</button>
+            <button type="button" id="subtab-historial" onclick="switchPosSubtab('historial')" class="pos-subtab-btn">Historial <span id="openOrdersCountBadge" style="background:#ea580c; color:#fff; padding:1px 6px; border-radius:10px; font-size:11px; margin-left:4px;">0</span></button>
+          </div>
+          <button type="button" onclick="startNewOrder()" class="btn-dark" style="float: right; background:#44403c; font-weight:700;">+ Nuevo Pedido</button>
+        </div>
+
+        <div id="pos-subview-pedidos" class="pos-panel-body">
+          <div style="margin-bottom: 14px;">
+            <input type="text" id="posSearchInput" onkeyup="renderPOS()" placeholder="🔍 Buscar producto..." class="input-ctrl">
+          </div>
+          <div id="posProductGrid" class="pos-grid"></div>
+        </div>
+
+        <div id="pos-subview-historial" class="pos-panel-body hidden space-y">
+          <div>
+            <div style="margin-bottom: 8px; overflow: hidden;">
+              <h3 style="font-size: 13px; font-weight: 800; color: #44403c; text-transform: uppercase; float: left;">EN CURSO</h3>
+              <span style="font-size: 11px; color: #78716c; float: right;">Tocá → para retomar o cerrar</span>
+            </div>
+            <div class="table-wrap" style="border: 1px solid #e7e5e4; border-radius: 8px;">
+              <table>
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Hora Inicio</th>
+                    <th>Estado</th>
+                    <th>Cliente</th>
+                    <th>Detalle</th>
+                    <th class="text-right">Total</th>
+                    <th class="text-center">Abrir</th>
+                  </tr>
+                </thead>
+                <tbody id="openOrdersTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div>
+            <div style="margin-bottom: 8px; overflow: hidden;">
+              <h3 style="font-size: 13px; font-weight: 800; color: #44403c; text-transform: uppercase; float: left;">CERRADAS</h3>
+              <select id="salesFilterShift" onchange="renderSalesHistory()" class="input-ctrl" style="float: right; width: auto; padding: 4px 8px; font-size: 12px;">
+                <option value="ALL">Todos los operadores</option>
+              </select>
+            </div>
+            <div class="table-wrap" style="border: 1px solid #e7e5e4; border-radius: 8px; max-height: 320px;">
+              <table>
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Fecha / Hora</th>
+                    <th>Estado</th>
+                    <th>Cliente</th>
+                    <th>Detalle</th>
+                    <th>Pago</th>
+                    <th class="text-right">Total</th>
+                    <th class="text-right">CMV FIFO</th>
+                    <th id="salesHeaderAction" class="text-center hidden">Admin</th>
+                  </tr>
+                </thead>
+                <tbody id="salesHistoryBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Comanda lateral -->
+      <div class="col-pos-right">
+        <div class="card sticky-card">
+          <div id="ticketTopBar" class="ticket-top-bar new-order">
+            <strong id="ticketHeaderTitle" style="font-size: 15px; float: left;">Nuevo Pedido</strong>
+            <button type="button" onclick="clearCart()" style="float: right; background:rgba(255,255,255,0.15); border:none; color:#ffffff; padding: 4px 8px; border-radius: 4px; font-size: 11px; cursor: pointer;">Vaciar</button>
+          </div>
+
+          <div class="ticket-meta">
+            <div class="ticket-meta-row">
+              <span style="font-weight: 600; color: #57534e; display: inline-block; width: 75px;">Hora Inicio:</span>
+              <strong id="ticketStartTime" style="color: #1c1917;">--/--/-- --:--</strong>
+            </div>
+            <div class="ticket-meta-row">
+              <label class="field-label">Cliente</label>
+              <input type="text" id="ticketCustomer" onkeyup="syncCurrentOrderMeta()" placeholder="Nombre o mesa (opcional)" style="padding: 6px 8px; font-size: 13px;">
+            </div>
+            <div class="ticket-meta-row">
+              <label class="field-label">Comentario</label>
+              <input type="text" id="ticketComment" onkeyup="syncCurrentOrderMeta()" placeholder="Nota de pedido (opcional)" style="padding: 6px 8px; font-size: 13px;">
+            </div>
+          </div>
+
+          <div class="ticket-section-bar">
+            <span style="float: left;">ADICIONAR / ÍTEMS</span>
+            <span id="ticketItemsCount" style="float: right; font-size: 11px; font-weight: 400;">0 ítems</span>
+          </div>
+
+          <div id="cartItems" class="cart-list">
+            <p class="text-muted text-center" style="padding: 24px 0; font-size: 13px;">No hay productos en el pedido</p>
+          </div>
+
+          <div id="discountDrawer" class="discount-panel hidden">
+            <div class="discount-panel-row">
+              <label class="field-label">Motivo Descuento:</label>
+              <input type="text" id="discountReasonInput" placeholder="Ej: Promo, Empleado, Cortesía" style="font-size: 12px;">
+            </div>
+            <div class="discount-panel-row">
+              <label class="field-label">Tipo:</label>
+              <label style="margin-right: 12px;"><input type="radio" name="discountType" value="percent" checked onchange="toggleDiscountTypePlaceholder()"> Porcentual (%)</label>
+              <label><input type="radio" name="discountType" value="fixed" onchange="toggleDiscountTypePlaceholder()"> Fijo ($)</label>
+            </div>
+            <div class="discount-panel-row">
+              <label class="field-label">Valor (<span id="discountUnitSymbol">%</span>):</label>
+              <input type="number" id="discountValueInput" min="0" step="0.01" placeholder="Valor" style="font-size: 12px;">
+            </div>
+            <div style="text-align: right;">
+              <button type="button" onclick="cancelDiscount()" class="btn-outline" style="padding: 6px 12px;">Cancelar</button>
+              <button type="button" onclick="applyDiscount()" style="background: #ea580c; color: #fff; border: none; padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer; margin-left: 6px;">Confirmar</button>
+            </div>
+          </div>
+
+          <div id="appliedDiscountBanner" class="hidden" style="background: #fef9c3; border-top: 1px solid #fde047; padding: 8px 16px; font-size: 12px; color: #854d0e; overflow: hidden;">
+            <span id="appliedDiscountText" style="float: left;">Descuento aplicado</span>
+            <button type="button" onclick="removeDiscount()" style="float: right; background: none; border: none; color: #dc2626; font-weight: 700; cursor: pointer; font-size: 11px; text-decoration: underline;">Quitar</button>
+          </div>
+
+          <div class="ticket-total-bar">
+            <span style="float: left;">Total:</span>
+            <span id="cartTotal" style="float: right;">$ 0,00</span>
+          </div>
+
+          <div class="ticket-actions-bar">
+            <div style="margin-bottom: 10px;">
+              <button type="button" onclick="toggleDiscountDrawer()" class="btn-outline" style="width: 100%;">
+                <strong>%</strong> Aplicar Descuento
+              </button>
+            </div>
+            <div style="overflow: hidden;">
+              <button type="button" onclick="saveOrderAsInProgress()" class="btn-outline" style="float: left; width: 48%; border-color: #d97706; color: #b45309; padding: 10px;">🕒 En Curso</button>
+              <button type="button" onclick="openCloseOrderModal()" style="float: right; width: 48%; background: #292524; color: #ffffff; border: none; padding: 10px; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer;">Cerrar Pedido</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECCIÓN 2: ARQUEO DE CAJA -->
+    <section id="view-cash" class="hidden row-grid">
+      <div class="col-side space-y">
+        <div class="card">
+          <h2 class="card-title">Configurar Caja Inicial</h2>
+          <p class="card-subtitle" style="margin-bottom: 12px;">Se arrastra automáticamente el saldo final anterior.</p>
+          <form onsubmit="return setInitialCash(event);" class="space-y-sm">
+            <div>
+              <label class="field-label">Fecha (DD/MM/YYYY)</label>
+              <input type="text" id="cashDate" required class="input-ctrl" readonly>
+            </div>
+            <div>
+              <label class="field-label">Monto Caja Inicial (ARS)</label>
+              <input type="number" id="cashInitialAmount" required min="0" step="0.01" placeholder="Ej: 20000">
+            </div>
+            <div>
+              <label class="field-label">Motivo / Observación</label>
+              <input type="text" id="cashInitReason" required placeholder="Ej: Arraste automático">
+            </div>
+            <button type="submit" class="btn-stone">Guardar Caja Inicial</button>
+          </form>
+        </div>
+
+        <div class="card">
+          <h2 class="card-title">Registrar Salida de Caja</h2>
+          <form onsubmit="return registerCashOut(event);" class="space-y-sm">
+            <div>
+              <label class="field-label">Concepto / Motivo</label>
+              <input type="text" id="cashOutReason" required placeholder="Ej: Compra hielo">
+            </div>
+            <div>
+              <label class="field-label">Monto Retirado (ARS)</label>
+              <input type="number" id="cashOutAmount" required min="1" step="0.01" placeholder="Ej: 3500">
+            </div>
+            <button type="submit" class="btn-primary" style="background-color: #dc2626;">Registrar Salida</button>
+          </form>
+        </div>
+
+        <div class="card" style="background: #fffbeb; border: 1px solid #fde68a;">
+          <h2 class="card-title" style="font-size: 15px; color: #92400e; margin-bottom: 4px;">🔒 Cierre y Balance Diario</h2>
+          <p style="font-size: 12px; color: #78350f; margin-bottom: 12px;">Consolida el saldo para el día siguiente.</p>
+          <form onsubmit="return closeDailyCash(event);" class="space-y-sm">
+            <div>
+              <label class="field-label">Efectivo Real Contado en Caja</label>
+              <input type="number" id="cashCountedReal" required min="0" step="0.01" placeholder="Ej: 45000">
+            </div>
+            <button type="submit" class="btn-amber-sm" style="width: 100%; padding: 10px; font-weight: 700;">Finalizar Cierre Diario</button>
+          </form>
+        </div>
+      </div>
+
+      <div class="col-main">
+        <div class="card">
+          <div class="card-header">
+            <div style="float: left;">
+              <h2 class="card-title">Arqueo y Evolución de Caja</h2>
+              <p class="card-subtitle">Seguimiento diario de efectivo.</p>
+            </div>
+            <div style="float: right;">
+              <input type="date" id="cashFilterDateInput" onchange="renderCashSession()" class="input-ctrl" style="padding: 4px 8px; font-size: 12px;">
+            </div>
+          </div>
+
+          <div class="kpi-wrap">
+            <div class="kpi-4" style="background: #fafaf9;">
+              <p style="font-size: 10px; font-weight: 700; color: #78716c; text-transform: uppercase;">Caja Inicial</p>
+              <p id="kpiCashInit" style="font-size: 16px; font-weight: 800; margin-top: 2px;">$ 0,00</p>
+            </div>
+            <div class="kpi-4" style="background: #fafaf9;">
+              <p style="font-size: 10px; font-weight: 700; color: #78716c; text-transform: uppercase;">(+) Ventas Efectivo</p>
+              <p id="kpiCashSales" class="text-green" style="font-size: 16px; font-weight: 800; margin-top: 2px;">$ 0,00</p>
+            </div>
+            <div class="kpi-4" style="background: #fafaf9;">
+              <p style="font-size: 10px; font-weight: 700; color: #78716c; text-transform: uppercase;">(-) Salidas</p>
+              <p id="kpiCashOut" class="text-red" style="font-size: 16px; font-weight: 800; margin-top: 2px;">$ 0,00</p>
+            </div>
+            <div class="kpi-4" style="background: #fffbeb; border: 1px solid #fde68a;">
+              <p style="font-size: 10px; font-weight: 700; color: #92400e; text-transform: uppercase;">(=) Esperado</p>
+              <p id="kpiCashExpected" class="text-amber" style="font-size: 16px; font-weight: 800; margin-top: 2px;">$ 0,00</p>
+            </div>
+          </div>
+
+          <div id="cashCloseStatusBanner" class="info-box" style="margin-bottom: 16px; display: none;"></div>
+
+          <h3 class="card-title" style="font-size: 14px; margin-bottom: 8px;">Auditoría de Movimientos</h3>
+          <div class="table-wrap" style="max-height: 260px;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Fecha / Hora</th>
+                  <th>Operador</th>
+                  <th>Tipo</th>
+                  <th>Concepto</th>
+                  <th class="text-right">Monto</th>
+                  <th id="cashHeaderAction" class="text-center hidden">Admin</th>
+                </tr>
+              </thead>
+              <tbody id="cashMovementsBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECCIÓN 3: PRODUCTOS Y COSTOS -->
+    <section id="view-products" class="hidden row-grid">
+      <div class="col-side">
+        <div class="card">
+          <h2 class="card-title" id="prodFormTitle" style="margin-bottom: 16px;">Nuevo Producto</h2>
+          <form onsubmit="return saveProduct(event);" class="space-y-sm">
+            <input type="hidden" id="editProdId">
+            <div>
+              <label class="field-label">Nombre del Producto</label>
+              <input type="text" id="prodName" required placeholder="Ej: Café Doble">
+            </div>
+            <div>
+              <label class="field-label">Precio de Venta (ARS)</label>
+              <input type="number" id="prodPrice" required min="1" step="0.01" placeholder="Ej: 3500">
+            </div>
+            <div>
+              <label class="field-label">Tipo de Costeo y Stock</label>
+              <select id="prodType" onchange="toggleProductTypeUI()" class="input-ctrl">
+                <option value="recipe">Por Ingredientes / Receta (FIFO)</option>
+                <option value="unit">Por Unidad Directa (FIFO)</option>
+              </select>
+            </div>
+            <div id="recipeBuilder" class="recipe-box space-y-sm">
+              <p style="font-size: 12px; font-weight: 700; color: #78350f;">Receta:</p>
+              <div id="recipeRows" class="space-y-sm"></div>
+              <button type="button" onclick="addRecipeRow()" class="btn-amber-sm">+ Agregar Ingrediente</button>
+            </div>
+            <div id="unitInfoBox" class="info-box hidden">
+              Control por unidades enteras. Carga compras en la pestaña <strong>4</strong>.
+            </div>
+            <button type="submit" id="prodSubmitBtn" class="btn-stone">Guardar Producto</button>
+            <button type="button" id="prodCancelBtn" onclick="resetProductForm()" class="btn-outline hidden" style="width: 100%; margin-top: 6px;">Cancelar Edición</button>
+          </form>
+        </div>
+      </div>
+
+      <div class="col-main">
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">Listado de Productos y Márgenes</h2>
+            <p class="card-subtitle">Costos calculados por lotes FIFO vigentes.</p>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Producto</th>
+                  <th>Composición</th>
+                  <th class="text-right">Precio Venta</th>
+                  <th class="text-right">Costo FIFO</th>
+                  <th class="text-right">Margen</th>
+                  <th class="text-center">Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="productsTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECCIÓN 4: STOCK Y COMPRAS (FIFO) -->
+    <section id="view-stock" class="hidden row-grid">
+      <div class="col-side space-y">
+        <div class="card">
+          <h2 class="card-title">Registrar Compra (Lote FIFO)</h2>
+          <form onsubmit="return registerPurchase(event);" class="space-y-sm">
+            <div>
+              <label class="field-label">Ítem Comprado</label>
+              <select id="purchaseItemSelect" required class="input-ctrl"></select>
+            </div>
+            <div class="form-row-2">
+              <div class="form-half-left">
+                <label class="field-label">Cantidad</label>
+                <input type="number" id="purchaseQty" required min="0.01" step="0.01" placeholder="Ej: 1000">
+              </div>
+              <div class="form-half-right">
+                <label class="field-label">Costo Total (ARS)</label>
+                <input type="number" id="purchaseTotalCost" required min="0.01" step="0.01" placeholder="Ej: 100">
+              </div>
+            </div>
+            <button type="submit" class="btn-primary" style="padding: 10px;">+ Ingresar Lote</button>
+          </form>
+        </div>
+
+        <div class="card" style="border: 1px solid #fca5a5; background: #fff5f5;">
+          <h2 class="card-title" style="color: #991b1b;">🗑️ Registrar Desperdicio / Baja</h2>
+          <form onsubmit="return registerWaste(event);" class="space-y-sm">
+            <div>
+              <label class="field-label">Ítem</label>
+              <select id="wasteItemSelect" required class="input-ctrl"></select>
+            </div>
+            <div>
+              <label class="field-label">Cantidad a Desperdiciar</label>
+              <input type="number" id="wasteQty" required min="0.01" step="0.01" placeholder="Ej: 200">
+            </div>
+            <div>
+              <label class="field-label">Motivo</label>
+              <input type="text" id="wasteReason" required placeholder="Ej: Vencimiento / Rotura">
+            </div>
+            <button type="submit" class="btn-stone" style="background-color: #dc2626;">Registrar en P&L</button>
+          </form>
+        </div>
+
+        <div class="card" id="stockElementFormCard">
+          <h2 class="card-title" id="stockElementFormTitle" style="font-size: 15px; margin-bottom: 6px;">Agregar Elemento Stock</h2>
+          <form onsubmit="return saveStockElement(event);" class="space-y-sm">
+            <input type="hidden" id="editStockElementId">
+            <input type="hidden" id="editStockElementOriginalKind">
+            <div>
+              <label class="field-label">Tipo</label>
+              <select id="stockElementKind" onchange="toggleStockElementKindUI()" class="input-ctrl">
+                <option value="ingredient">Ingrediente</option>
+                <option value="product_unit">Producto Unidad</option>
+              </select>
+            </div>
+            <div>
+              <label class="field-label">Nombre</label>
+              <input type="text" id="ingName" required placeholder="Nombre del ítem">
+            </div>
+            <div id="stockUnitFieldsRow" class="form-row-2">
+              <div class="form-half-left">
+                <label class="field-label">Unidad</label>
+                <select id="ingUnit" class="input-ctrl">
+                  <option value="g">Gramos (g)</option>
+                  <option value="ml">Mililitros (ml)</option>
+                  <option value="u">Unidades (u)</option>
+                </select>
+              </div>
+              <div class="form-half-right">
+                <label class="field-label">Stock Mínimo</label>
+                <input type="number" id="ingMinStock" required min="0" value="200">
+              </div>
+            </div>
+            <div id="stockProductPriceRow" class="form-row-2 hidden">
+              <div class="form-half-left">
+                <label class="field-label">Precio Venta (ARS)</label>
+                <input type="number" id="stockProdPrice" min="0" step="0.01" placeholder="Precio">
+              </div>
+              <div class="form-half-right">
+                <label class="field-label">Stock Mínimo (u)</label>
+                <input type="number" id="stockProdMin" min="0" value="5">
+              </div>
+            </div>
+            <button type="submit" id="stockElementSubmitBtn" class="btn-stone">Crear Elemento</button>
+            <button type="button" id="stockElementCancelBtn" onclick="resetStockElementForm()" class="btn-outline hidden" style="width: 100%; margin-top: 6px;">Cancelar</button>
+          </form>
+        </div>
+      </div>
+
+      <div class="col-main space-y">
+        <div class="card">
+          <h2 class="card-title" style="margin-bottom: 16px;">Stock y Lotes Activos (FIFO)</h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Ítem</th>
+                  <th>Categoría</th>
+                  <th class="text-right">Stock</th>
+                  <th class="text-right">Valuación</th>
+                  <th>Lotes FIFO</th>
+                  <th class="text-center">Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="stockTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 class="card-title" style="font-size: 15px; margin-bottom: 12px;">Historial Desperdicios</h3>
+          <div class="table-wrap" style="max-height: 200px;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Operador</th>
+                  <th>Ítem</th>
+                  <th class="text-right">Cant</th>
+                  <th>Motivo</th>
+                  <th class="text-right">Costo</th>
+                  <th id="wasteHeaderAction" class="text-center hidden">Admin</th>
+                </tr>
+              </thead>
+              <tbody id="wasteHistoryBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 class="card-title" style="font-size: 15px; margin-bottom: 12px;">Historial Compras</h3>
+          <div class="table-wrap" style="max-height: 200px;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Ítem</th>
+                  <th class="text-right">Comprado</th>
+                  <th class="text-right">Remanente</th>
+                  <th class="text-right">Total</th>
+                  <th class="text-right">Unitario</th>
+                  <th id="purchasesHeaderAction" class="text-center hidden">Admin</th>
+                </tr>
+              </thead>
+              <tbody id="purchasesHistoryBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECCIÓN 5: USUARIOS -->
+    <section id="view-users" class="hidden row-grid">
+      <div class="col-side">
+        <div class="card">
+          <h2 class="card-title" id="userFormTitle" style="margin-bottom: 16px;">Configurar Usuario</h2>
+          <form onsubmit="return saveUserAccount(event);" class="space-y-sm">
+            <input type="hidden" id="editUserId">
+            <div>
+              <label class="field-label">Usuario (Login)</label>
+              <input type="text" id="usrUsername" required placeholder="valeria" autocapitalize="none">
+            </div>
+            <div>
+              <label class="field-label">Nombre Visible</label>
+              <input type="text" id="usrFullName" required placeholder="Valeria Gómez">
+            </div>
+            <div id="roleSelectContainer">
+              <label class="field-label">Rol</label>
+              <select id="usrRole" onchange="togglePermissionsUI()" class="input-ctrl">
+                <option value="vendedor">Vendedor</option>
+                <option value="admin">Administrador</option>
+              </select>
+            </div>
+            
+            <div id="permissionsContainer">
+              <label class="field-label" style="margin-top: 8px;">Permisos:</label>
+              <div class="permissions-grid">
+                <label class="perm-item"><input type="checkbox" id="perm-pos" checked> POS</label>
+                <label class="perm-item"><input type="checkbox" id="perm-cash" checked> Caja</label>
+                <label class="perm-item"><input type="checkbox" id="perm-products"> Productos</label>
+                <label class="perm-item"><input type="checkbox" id="perm-stock"> Stock</label>
+                <label class="perm-item"><input type="checkbox" id="perm-users"> Usuarios</label>
+                <label class="perm-item"><input type="checkbox" id="perm-finance"> P&L</label>
+              </div>
+            </div>
+
+            <div>
+              <label class="field-label">Contraseña</label>
+              <input type="password" id="usrPassword" required placeholder="••••••••">
+            </div>
+            <button type="submit" id="userFormSubmitBtn" class="btn-stone">Guardar</button>
+            <button type="button" id="userFormCancelBtn" onclick="resetUserForm()" class="btn-outline hidden" style="width: 100%; margin-top: 6px;">Cancelar</button>
+          </form>
+        </div>
+      </div>
+
+      <div class="col-main">
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">Usuarios del Sistema</h2>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Usuario</th>
+                  <th>Nombre</th>
+                  <th>Rol</th>
+                  <th>Permisos</th>
+                  <th class="text-center">Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="usersTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECCIÓN 6: BALANCE Y P&L -->
+    <section id="view-finance" class="hidden">
+      <div class="card" style="margin-bottom: 20px; background: #fafaf9; border: 1px solid #d6d3d1; overflow: hidden;">
+        <div style="float: left; min-width: 240px; margin-bottom: 8px;">
+          <label for="pnlMonthSelect" class="field-label" style="font-size: 13px; margin-bottom: 4px;">📅 Período de Análisis:</label>
+          <select id="pnlMonthSelect" onchange="renderFinance()" class="input-ctrl" style="font-weight: 600; background: #ffffff;">
+            <option value="ALL">Histórico Acumulado</option>
+          </select>
+        </div>
+        <div style="float: right; text-align: right; background: #ffffff; padding: 10px 16px; border-radius: 8px; border: 1px solid #e7e5e4;">
+          <span style="font-size: 11px; color: #78716c; text-transform: uppercase; font-weight: 700; display: block;">Resultado Neto</span>
+          <strong id="pnlHeaderNetBadge" style="font-size: 20px;" class="text-green">$ 0,00</strong>
+        </div>
+      </div>
+
+      <div class="kpi-wrap">
+        <div class="kpi-5">
+          <p style="font-size: 11px; font-weight: 700; color: #78716c; text-transform: uppercase;">Ventas</p>
+          <p id="kpiRevenue" style="font-size: 18px; font-weight: 800; margin-top: 4px;">$ 0,00</p>
+        </div>
+        <div class="kpi-5">
+          <p style="font-size: 11px; font-weight: 700; color: #78716c; text-transform: uppercase;">CMV FIFO</p>
+          <p id="kpiCogs" class="text-amber" style="font-size: 18px; font-weight: 800; margin-top: 4px;">$ 0,00</p>
+        </div>
+        <div class="kpi-5">
+          <p style="font-size: 11px; font-weight: 700; color: #78716c; text-transform: uppercase;">Desperdicios</p>
+          <p id="kpiWaste" class="text-red" style="font-size: 18px; font-weight: 800; margin-top: 4px;">$ 0,00</p>
+        </div>
+        <div class="kpi-5">
+          <p style="font-size: 11px; font-weight: 700; color: #78716c; text-transform: uppercase;">Costos Fijos</p>
+          <p id="kpiFixed" class="text-red" style="font-size: 18px; font-weight: 800; margin-top: 4px;">$ 0,00</p>
+        </div>
+        <div class="kpi-5">
+          <p style="font-size: 11px; font-weight: 700; color: #78716c; text-transform: uppercase;">Resultado Neto</p>
+          <p id="kpiNet" class="text-green" style="font-size: 18px; font-weight: 800; margin-top: 4px;">$ 0,00</p>
+        </div>
+      </div>
+
+      <div class="row-grid">
+        <div class="col-half-left">
+          <div class="card">
+            <h2 class="card-title" style="margin-bottom: 16px;">Estado de Resultados <span id="pnlSubtitlePeriod" style="font-size: 13px; font-weight: 400; color: #78716c;"></span></h2>
+            <table>
+              <tbody>
+                <tr>
+                  <td style="font-weight: 600;">Ventas Brutas</td>
+                  <td id="pnlSales" class="text-right" style="font-weight: 700;">$ 0,00</td>
+                </tr>
+                <tr>
+                  <td class="text-muted">(-) CMV FIFO</td>
+                  <td id="pnlCogs" class="text-right text-red">$ 0,00</td>
+                </tr>
+                <tr style="background-color: #fafaf9; font-weight: 700;">
+                  <td>(=) Margen Bruto</td>
+                  <td id="pnlGross" class="text-right">$ 0,00</td>
+                </tr>
+                <tr>
+                  <td class="text-muted">(-) Desperdicios</td>
+                  <td id="pnlWaste" class="text-right text-red">$ 0,00</td>
+                </tr>
+                <tr>
+                  <td class="text-muted">(-) Costos Fijos</td>
+                  <td id="pnlFixed" class="text-right text-red">$ 0,00</td>
+                </tr>
+                <tr style="background-color: #fffbeb; font-weight: 800; font-size: 15px;">
+                  <td>(=) Utilidad Neta</td>
+                  <td id="pnlNet" class="text-right">$ 0,00</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <div class="form-row-2" style="margin-top: 20px; padding-top: 16px; border-top: 1px solid #e7e5e4; font-size: 12px;">
+              <div class="form-half-left">
+                <h4 style="font-weight: 700; margin-bottom: 8px;">Por Medio de Pago</h4>
+                <ul id="breakdownPayment" style="list-style: none;" class="space-y-sm"></ul>
+              </div>
+              <div class="form-half-right">
+                <h4 style="font-weight: 700; margin-bottom: 8px;">Por Operador</h4>
+                <ul id="breakdownShift" style="list-style: none;" class="space-y-sm"></ul>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-half-right space-y">
+          <div class="card">
+            <h2 class="card-title" style="font-size: 15px; margin-bottom: 12px;">Libro de Balance</h2>
+            <div class="balance-asset">
+              <h3 style="font-size: 11px; font-weight: 700; color: #065f46; text-transform: uppercase; margin-bottom: 8px;">Activos</h3>
+              <div style="font-size: 12px;">
+                <div style="overflow: hidden; margin-bottom: 4px;"><span style="float: left;">Caja y Bancos:</span><strong id="balCash" style="float: right;">$ 0,00</strong></div>
+                <div style="overflow: hidden; margin-bottom: 4px;"><span style="float: left;">Inventario FIFO:</span><strong id="balInventory" style="float: right;">$ 0,00</strong></div>
+                <div style="overflow: hidden; border-top: 1px solid #a7f3d0; padding-top: 6px; font-weight: 800;"><span style="float: left;">Total Activo:</span><span id="balTotalAssets" style="float: right;">$ 0,00</span></div>
+              </div>
+            </div>
+            <div class="balance-equity">
+              <h3 style="font-size: 11px; font-weight: 700; color: #292524; text-transform: uppercase; margin-bottom: 8px;">Pasivo + PN</h3>
+              <div style="font-size: 12px;">
+                <div style="overflow: hidden; margin-bottom: 4px;"><span style="float: left;">Capital Compras:</span><strong id="balCapital" style="float: right;">$ 0,00</strong></div>
+                <div style="overflow: hidden; margin-bottom: 4px;"><span style="float: left;">Resultado:</span><strong id="balRetained" style="float: right;">$ 0,00</strong></div>
+                <div style="overflow: hidden; border-top: 1px solid #d6d3d1; padding-top: 6px; font-weight: 800;"><span style="float: left;">Total Pasivo + PN:</span><span id="balTotalEquity" style="float: right;">$ 0,00</span></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <h2 class="card-title" style="font-size: 15px; margin-bottom: 12px;">Costos Fijos</h2>
+            <form onsubmit="return addFixedCost(event);" style="margin-bottom: 12px;">
+              <input type="text" id="fixedName" required placeholder="Concepto (ej: Alquiler)" style="margin-bottom: 8px;">
+              <input type="number" id="fixedAmount" required min="1" step="0.01" placeholder="Monto ARS" style="margin-bottom: 8px;">
+              <button type="submit" class="btn-stone">Agregar Costo Fijo</button>
+            </form>
+            <div class="table-wrap" style="max-height: 180px;">
+              <table>
+                <tbody id="fixedCostsBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top: 10px;">
+        <div class="card-header">
+          <h2 class="card-title">📈 Evolución Histórica Mensual</h2>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Período</th>
+                <th class="text-right">Ventas</th>
+                <th class="text-right">CMV</th>
+                <th class="text-right">Margen Bruto</th>
+                <th class="text-right">Desperdicios</th>
+                <th class="text-right">Costos Fijos</th>
+                <th class="text-right">Neto</th>
+                <th class="text-center">Rentabilidad</th>
+              </tr>
+            </thead>
+            <tbody id="evolutionTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    /* ==========================================================================
+       CAFÉCONTROL POS v7 - MOTOR ES5 PURO (COMPATIBLE SAFARI iOS 9.3.5 + MODERNOS)
+       ========================================================================== */
+    var STORAGE_KEY = 'cafeteria_pos_ars_v7';
+    var LEGACY_KEYS = ['cafeteria_pos_ars_v5', 'cafeteria_pos_ars_v4'];
+    var SESSION_USER_KEY = 'cafeteria_current_logged_user_id_v7';
+    var GIT_CFG_KEY = 'cafeteria_git_export_cfg_v7';
+
+    // Valores por defecto para la configuración de GitHub (el token nunca va fijo acá)
+    var DEFAULT_GIT_CFG = {
+      owner: '',
+      repo: '',
+      path: 'data/db.json',
+      branch: 'main',
+      token: ''
+    };
+
+    var defaultData = {
+      orderCounter: 1,
+      users: [
+        { id: 'u_admin', username: 'admin', fullName: 'Administrador General', role: 'admin', pass: 'admin123', permissions: ['pos', 'cash', 'products', 'stock', 'users', 'finance'] },
+        { id: 'u_vendedor', username: 'vendedor', fullName: 'Vendedor de Turno', role: 'vendedor', pass: 'vendedor123', permissions: ['pos', 'cash'] }
+      ],
+      ingredients: [
+        { id: 'ing_cafe', name: 'Café en Grano', unit: 'g', minStock: 300 },
+        { id: 'ing_leche', name: 'Leche Entera', unit: 'ml', minStock: 2000 }
+      ],
+      products: [
+        { id: 'prod_espresso', name: 'Café Espresso (20g)', price: 2500, type: 'recipe', recipe: [{ ingredientId: 'ing_cafe', qty: 20 }] },
+        { id: 'prod_latte', name: 'Café con Leche / Latte', price: 3400, type: 'recipe', recipe: [{ ingredientId: 'ing_cafe', qty: 20 }, { ingredientId: 'ing_leche', qty: 180 }] },
+        { id: 'prod_medialuna', name: 'Medialuna de Manteca', price: 1800, type: 'unit', minStock: 5, recipe: [] }
+      ],
+      batches: [
+        { id: 'b1', itemType: 'ingredient', itemId: 'ing_cafe', initialQty: 1000, remainingQty: 1000, totalCost: 100, unitCost: 0.10, date: '16/11/2026 08:00' },
+        { id: 'b2', itemType: 'ingredient', itemId: 'ing_leche', initialQty: 5000, remainingQty: 5000, totalCost: 7500, unitCost: 1.50, date: '16/11/2026 08:05' },
+        { id: 'b3', itemType: 'product', itemId: 'prod_medialuna', initialQty: 30, remainingQty: 30, totalCost: 15000, unitCost: 500, date: '16/11/2026 08:10' }
+      ],
+      openOrders: [],
+      sales: [],
+      wastes: [],
+      fixedCosts: [
+        { id: 'fc1', name: 'Alquiler Local', amount: 450000 },
+        { id: 'fc2', name: 'Servicios', amount: 65000 }
+      ],
+      cashMovements: []
+    };
+
+    var state = JSON.parse(JSON.stringify(defaultData));
+    var selectedPayment = 'Efectivo';
+    var activeOrder = createEmptyOrderDraft();
+
+    function trimStr(str) {
+      return (str || '').replace(/^\s+|\s+$/g, '');
+    }
+
+    function pad2(n) {
+      return n < 10 ? '0' + n : '' + n;
+    }
+
+    function formatARS(num) {
+      var n = Number(num || 0);
+      var sign = n < 0 ? '-' : '';
+      var absVal = Math.abs(n).toFixed(2);
+      var parts = absVal.split('.');
+      parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+      return sign + '$ ' + parts[0] + ',' + parts[1];
+    }
+
+    function nowStr() {
+      var d = new Date();
+      return pad2(d.getDate()) + '/' + pad2(d.getMonth() + 1) + '/' + d.getFullYear() + ' ' + pad2(d.getHours()) + ':' + pad2(d.getMinutes());
+    }
+
+    function getTodayInputStr() {
+      var d = new Date();
+      return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
+    }
+
+    function createEmptyOrderDraft() {
+      return { id: null, number: null, startTime: nowStr(), customer: '', comment: '', items: [], discount: null };
+    }
+
+    function ensureDataIntegrity() {
+      if (!state || typeof state !== 'object') state = JSON.parse(JSON.stringify(defaultData));
+      if (!state.cashMovements) state.cashMovements = [];
+      if (!state.wastes) state.wastes = [];
+      if (!state.openOrders) state.openOrders = [];
+      if (!state.ingredients) state.ingredients = [];
+      if (!state.products) state.products = [];
+      if (!state.batches) state.batches = [];
+      if (!state.sales) state.sales = [];
+      if (!state.fixedCosts) state.fixedCosts = [];
+      if (!state.orderCounter) state.orderCounter = state.sales.length + 1;
+      if (!state.users || state.users.length === 0) {
+        state.users = JSON.parse(JSON.stringify(defaultData.users));
+      }
+      for (var i = 0; i < state.users.length; i++) {
+        var u = state.users[i];
+        if (!u.permissions) {
+          u.permissions = (u.role === 'admin') ? ['pos', 'cash', 'products', 'stock', 'users', 'finance'] : ['pos', 'cash'];
+        }
+      }
+    }
+
+    function loadLocalState() {
+      var saved = null;
+      try {
+        saved = localStorage.getItem(STORAGE_KEY);
+        if (!saved) {
+          for (var i = 0; i < LEGACY_KEYS.length; i++) {
+            saved = localStorage.getItem(LEGACY_KEYS[i]);
+            if (saved) break;
+          }
+        }
+      } catch (e) {}
+
+      if (saved) {
+        try {
+          state = JSON.parse(saved);
+        } catch (parseErr) {
+          state = JSON.parse(JSON.stringify(defaultData));
+        }
+      }
+      ensureDataIntegrity();
+    }
+
+    function saveState() {
+      var stateToSave = JSON.parse(JSON.stringify(state));
+      delete stateToSave.currentLoggedInUserId;
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(stateToSave));
+      } catch (e) {
+        alert('⚠️ No se pudo guardar en almacenamiento local (revisá que Safari no esté en Navegación Privada).');
+      }
+    }
+
+    /* ==========================================================================
+       EXPORTACIÓN MANUAL A GITHUB (CONTENTS API - ES5 + BASE64 UTF-8)
+       ========================================================================== */
+    function utf8ToBase64(str) {
+      return window.btoa(unescape(encodeURIComponent(str)));
+    }
+
+    function getGitConfig() {
+      var cfg = JSON.parse(JSON.stringify(DEFAULT_GIT_CFG));
+      try {
+        var saved = localStorage.getItem(GIT_CFG_KEY);
+        if (saved) {
+          var parsed = JSON.parse(saved);
+          if (parsed.owner) cfg.owner = parsed.owner;
+          if (parsed.repo) cfg.repo = parsed.repo;
+          if (parsed.path) cfg.path = parsed.path;
+          if (parsed.branch) cfg.branch = parsed.branch;
+          if (parsed.token) cfg.token = parsed.token;
+        }
+      } catch (e) {}
+      return cfg;
+    }
+
+    function saveGitConfig(cfg) {
+      try {
+        localStorage.setItem(GIT_CFG_KEY, JSON.stringify(cfg));
+      } catch (e) {}
+    }
+
+    function openGitModal() {
+      var cfg = getGitConfig();
+      document.getElementById('gitOwnerInput').value = cfg.owner || '';
+      document.getElementById('gitRepoInput').value = cfg.repo || '';
+      document.getElementById('gitPathInput').value = cfg.path || 'data/db.json';
+      document.getElementById('gitBranchInput').value = cfg.branch || 'main';
+      document.getElementById('gitTokenInput').value = cfg.token || '';
+      var msgBox = document.getElementById('gitStatusMessage');
+      msgBox.style.display = 'none';
+      msgBox.innerHTML = '';
+      document.getElementById('gitModal').className = 'modal-overlay';
+    }
+
+    function closeGitModal() {
+      document.getElementById('gitModal').className = 'modal-overlay hidden';
+    }
+
+    function setGitStatus(htmlMsg, isError) {
+      var box = document.getElementById('gitStatusMessage');
+      box.style.display = 'block';
+      box.style.borderColor = isError ? '#fca5a5' : '#a7f3d0';
+      box.style.backgroundColor = isError ? '#fff5f5' : '#ecfdf5';
+      box.style.color = isError ? '#991b1b' : '#065f46';
+      box.innerHTML = htmlMsg;
+    }
+
+    function pushBackupToGitHub() {
+      var owner = trimStr(document.getElementById('gitOwnerInput').value);
+      var repo = trimStr(document.getElementById('gitRepoInput').value);
+      var path = trimStr(document.getElementById('gitPathInput').value) || 'data/db.json';
+      var branch = trimStr(document.getElementById('gitBranchInput').value) || 'main';
+      var token = trimStr(document.getElementById('gitTokenInput').value);
+
+      if (!owner || !repo || !path || !token) {
+        setGitStatus('⚠️ Completá Usuario/Owner, Repositorio, Ruta y Token antes de subir.', true);
+        return;
+      }
+
+      var cfg = { owner: owner, repo: repo, path: path, branch: branch, token: token };
+      saveGitConfig(cfg);
+
+      var btn = document.getElementById('btnPushGit');
+      btn.disabled = true;
+      btn.innerHTML = '⏳ Consultando GitHub...';
+      setGitStatus('Conectando con GitHub API...', false);
+
+      var cleanPath = path.replace(/^\/+/, '');
+      var apiUrl = 'https://api.github.com/repos/' + encodeURIComponent(owner) + '/' + encodeURIComponent(repo) + '/contents/' + cleanPath;
+
+      // Paso 1: Obtener el SHA actual del archivo (si existe) para poder actualizarlo
+      var getXhr = new XMLHttpRequest();
+      getXhr.open('GET', apiUrl + '?ref=' + encodeURIComponent(branch) + '&t=' + new Date().getTime(), true);
+      getXhr.setRequestHeader('Authorization', 'token ' + token);
+      getXhr.setRequestHeader('Accept', 'application/vnd.github.v3+json');
+
+      getXhr.onreadystatechange = function() {
+        if (getXhr.readyState === 4) {
+          var existingSha = null;
+          if (getXhr.status === 200) {
+            try {
+              var info = JSON.parse(getXhr.responseText);
+              if (info && info.sha) existingSha = info.sha;
+            } catch (e) {}
+          } else if (getXhr.status !== 404) {
+            btn.disabled = false;
+            btn.innerHTML = '⬆️ Subir ahora a GitHub';
+            setGitStatus('❌ Error al leer repositorio (HTTP ' + getXhr.status + '). Revisá Owner, Repo o Token.', true);
+            return;
+          }
+
+          // Paso 2: Enviar PUT con el JSON actualizado en Base64
+          btn.innerHTML = '⬆️ Subiendo commit...';
+          var exportPayload = JSON.parse(JSON.stringify(state));
+          delete exportPayload.currentLoggedInUserId;
+          var jsonPretty = JSON.stringify(exportPayload, null, 2);
+
+          var bodyObj = {
+            message: 'CaféControl POS v7 - Exportación manual (' + nowStr() + ')',
+            content: utf8ToBase64(jsonPretty),
+            branch: branch
+          };
+          if (existingSha) {
+            bodyObj.sha = existingSha;
+          }
+
+          var putXhr = new XMLHttpRequest();
+          putXhr.open('PUT', apiUrl, true);
+          putXhr.setRequestHeader('Authorization', 'token ' + token);
+          putXhr.setRequestHeader('Accept', 'application/vnd.github.v3+json');
+          putXhr.setRequestHeader('Content-Type', 'application/json');
+
+          putXhr.onreadystatechange = function() {
+            if (putXhr.readyState === 4) {
+              btn.disabled = false;
+              btn.innerHTML = '⬆️ Subir ahora a GitHub';
+              if (putXhr.status === 200 || putXhr.status === 201) {
+                setGitStatus('✅ <strong>¡Actualizado en GitHub!</strong> Archivo <code>' + cleanPath + '</code> guardado en rama <code>' + branch + '</code>.', false);
+              } else {
+                setGitStatus('❌ Error al guardar en GitHub (HTTP ' + putXhr.status + '). Verificá permisos de escritura del token.', true);
+              }
+            }
+          };
+
+          putXhr.onerror = function() {
+            btn.disabled = false;
+            btn.innerHTML = '⬆️ Subir ahora a GitHub';
+            setGitStatus('❌ Sin conexión o certificado bloqueado por el navegador antiguo. Usá el botón de JSON local abajo.', true);
+          };
+
+          putXhr.send(JSON.stringify(bodyObj));
+        }
+      };
+
+      getXhr.onerror = function() {
+        btn.disabled = false;
+        btn.innerHTML = '⬆️ Subir ahora a GitHub';
+        setGitStatus('❌ No se pudo conectar con GitHub (en iOS 9 los certificados TLS de GitHub pueden estar bloqueados). Usá el respaldo JSON local.', true);
+      };
+
+      getXhr.send();
+    }
+
+    function exportLocalJsonFallback() {
+      var exportPayload = JSON.parse(JSON.stringify(state));
+      delete exportPayload.currentLoggedInUserId;
+      var jsonStr = JSON.stringify(exportPayload, null, 2);
+
+      // Intentar descarga directa en navegadores que la soporten
+      try {
+        var dataUri = 'data:text/json;charset=utf-8,' + encodeURIComponent(jsonStr);
+        var a = document.createElement('a');
+        a.href = dataUri;
+        a.download = 'cafecontrol_v7_' + getTodayInputStr() + '.json';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      } catch (e) {}
+
+      // Mostrar también en modal por si Safari iOS 9 no descarga el archivo automáticamente
+      document.getElementById('jsonRawTextarea').value = jsonStr;
+      document.getElementById('jsonTextModal').className = 'modal-overlay';
+    }
+
+    function importBackup(e) {
+      var file = e.target.files[0];
+      if (!file) return;
+      var reader = new FileReader();
+      reader.onload = function(evt) {
+        try {
+          var imported = JSON.parse(evt.target.result);
+          if (!imported || typeof imported !== 'object') {
+            alert('❌ Archivo JSON inválido.');
+            return;
+          }
+          state = imported;
+          ensureDataIntegrity();
+          saveState();
+          renderAllViews();
+          alert('✅ Backup importado correctamente.');
+        } catch (err) {
+          alert('❌ Error al leer el archivo JSON.');
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    /* ==========================================================================
+       AUTENTICACIÓN Y PERMISOS (100% LOCAL E INSTANTÁNEO)
+       ========================================================================== */
+    function openLoginModal() {
+      document.getElementById('loginUsernameInput').value = '';
+      document.getElementById('loginPassword').value = '';
+      document.getElementById('loginModal').className = 'modal-overlay';
+    }
+
+    function handleLogin(e) {
+      if (e && e.preventDefault) e.preventDefault();
+
+      var typedUser = trimStr(document.getElementById('loginUsernameInput').value).toLowerCase();
+      var pass = document.getElementById('loginPassword').value;
+
+      if (!typedUser || !pass) {
+        alert('Completá usuario y contraseña.');
+        return false;
+      }
+
+      loadLocalState();
+
+      var matchedUser = null;
+      for (var i = 0; i < state.users.length; i++) {
+        var u = state.users[i];
+        var uName = trimStr(u.username).toLowerCase();
+        if (uName === typedUser && u.pass === pass) {
+          matchedUser = u;
+          break;
+        }
+      }
+
+      if (!matchedUser) {
+        alert('❌ Usuario o contraseña incorrectos.');
+        return false;
+      }
+
+      try {
+        localStorage.setItem(SESSION_USER_KEY, matchedUser.id);
+      } catch (err) {}
+
+      document.getElementById('loginModal').className = 'modal-overlay hidden';
+      document.getElementById('loginUsernameInput').value = '';
+      document.getElementById('loginPassword').value = '';
+
+      applyRolePermissions();
+      renderAllViews();
+      return false;
+    }
+
+    function getCurrentUser() {
+      var savedUserId = null;
+      try {
+        savedUserId = localStorage.getItem(SESSION_USER_KEY);
+      } catch (e) {}
+      if (!savedUserId) return null;
+
+      for (var i = 0; i < state.users.length; i++) {
+        if (state.users[i].id === savedUserId) return state.users[i];
+      }
+      return null;
+    }
+
+    function hasPermission(tabKey) {
+      var user = getCurrentUser();
+      if (!user) return false;
+      if (user.role === 'admin') return true;
+      if (!user.permissions) return false;
+      return user.permissions.indexOf(tabKey) !== -1;
+    }
+
+    function isAdmin() {
+      var user = getCurrentUser();
+      return user && user.role === 'admin';
+    }
+
+    function applyRolePermissions() {
+      var user = getCurrentUser();
+      if (!user) {
+        openLoginModal();
+        return;
+      }
+
+      var roleTag = (user.role === 'admin') ? '🔑 Admin' : '👤 Vendedor';
+      document.getElementById('activeUserLabel').innerHTML = user.fullName + ' (' + roleTag + ')';
+
+      var tabs = ['pos', 'cash', 'products', 'stock', 'users', 'finance'];
+      var firstAllowedTab = null;
+
+      for (var i = 0; i < tabs.length; i++) {
+        var t = tabs[i];
+        var btn = document.getElementById('tab-' + t);
+        if (hasPermission(t)) {
+          btn.className = btn.className.replace(/\bhidden\b/g, '');
+          if (!firstAllowedTab) firstAllowedTab = t;
+        } else {
+          if (btn.className.indexOf('hidden') === -1) {
+            btn.className += ' hidden';
+          }
+        }
+      }
+
+      var activeFound = false;
+      for (var j = 0; j < tabs.length; j++) {
+        var sec = document.getElementById('view-' + tabs[j]);
+        if (sec.className.indexOf('hidden') === -1 && hasPermission(tabs[j])) {
+          activeFound = true;
+          break;
+        }
+      }
+
+      if (!activeFound && firstAllowedTab) {
+        switchTab(firstAllowedTab);
+      }
+    }
+
+    /* ==========================================================================
+       MOTOR FIFO DE INVENTARIO Y COSTOS
+       ========================================================================== */
+    function getFifoUnitCost(itemType, itemId, neededQty) {
+      if (neededQty === undefined) neededQty = 1;
+      var batches = [];
+      for (var i = 0; i < state.batches.length; i++) {
+        var b = state.batches[i];
+        if (b.itemType === itemType && b.itemId === itemId && b.remainingQty > 0) {
+          batches.push(b);
+        }
+      }
+      if (batches.length === 0) return 0;
+
+      var remainingToPrice = neededQty;
+      var accumulatedCost = 0;
+
+      for (var j = 0; j < batches.length; j++) {
+        if (remainingToPrice <= 0) break;
+        var batch = batches[j];
+        var take = Math.min(batch.remainingQty, remainingToPrice);
+        accumulatedCost += take * batch.unitCost;
+        remainingToPrice -= take;
+      }
+
+      if (remainingToPrice > 0) {
+        var lastBatch = batches[batches.length - 1];
+        accumulatedCost += remainingToPrice * lastBatch.unitCost;
+      }
+      return accumulatedCost;
+    }
+
+    function consumeFifoStock(itemType, itemId, qtyToConsume) {
+      var batches = [];
+      var allItemBatches = [];
+      for (var i = 0; i < state.batches.length; i++) {
+        var b = state.batches[i];
+        if (b.itemType === itemType && b.itemId === itemId) {
+          allItemBatches.push(b);
+          if (b.remainingQty > 0) batches.push(b);
+        }
+      }
+
+      var remaining = qtyToConsume;
+      var realCost = 0;
+
+      for (var j = 0; j < batches.length; j++) {
+        if (remaining <= 0) break;
+        var batch = batches[j];
+        var take = Math.min(batch.remainingQty, remaining);
+        batch.remainingQty = Number((batch.remainingQty - take).toFixed(4));
+        realCost += take * batch.unitCost;
+        remaining = Number((remaining - take).toFixed(4));
+      }
+
+      if (remaining > 0 && allItemBatches.length > 0) {
+        realCost += remaining * allItemBatches[allItemBatches.length - 1].unitCost;
+      }
+      return realCost;
+    }
+
+    function getProductCurrentFifoCost(product) {
+      if (product.type === 'unit') {
+        return getFifoUnitCost('product', product.id, 1);
+      } else {
+        var sum = 0;
+        for (var i = 0; i < product.recipe.length; i++) {
+          var item = product.recipe[i];
+          sum += getFifoUnitCost('ingredient', item.ingredientId, item.qty);
+        }
+        return sum;
+      }
+    }
+
+    function getAvailableStock(itemType, itemId) {
+      var sum = 0;
+      for (var i = 0; i < state.batches.length; i++) {
+        var b = state.batches[i];
+        if (b.itemType === itemType && b.itemId === itemId) {
+          sum += b.remainingQty;
+        }
+      }
+      return sum;
+    }
+
+    /* ==========================================================================
+       NAVEGACIÓN DE PESTAÑAS
+       ========================================================================== */
+    function switchTab(tabName) {
+      if (!hasPermission(tabName)) {
+        alert('⛔ Acceso restringido.');
+        return;
+      }
+
+      var tabs = ['pos', 'cash', 'products', 'stock', 'users', 'finance'];
+      for (var i = 0; i < tabs.length; i++) {
+        var t = tabs[i];
+        var sec = document.getElementById('view-' + t);
+        var btn = document.getElementById('tab-' + t);
+        if (t === tabName) {
+          sec.className = sec.className.replace(/\bhidden\b/g, '');
+          if (btn.className.indexOf('tab-active') === -1) btn.className += ' tab-active';
+        } else {
+          if (sec.className.indexOf('hidden') === -1) sec.className += ' hidden';
+          btn.className = btn.className.replace(/\btab-active\b/g, '');
+        }
+      }
+      renderAllViews();
+    }
+
+    /* ==========================================================================
+       PUNTO DE VENTA (POS)
+       ========================================================================== */
+    function switchPosSubtab(subtab) {
+      var btnPed = document.getElementById('subtab-pedidos');
+      var btnHis = document.getElementById('subtab-historial');
+      var viewPed = document.getElementById('pos-subview-pedidos');
+      var viewHis = document.getElementById('pos-subview-historial');
+
+      if (subtab === 'pedidos') {
+        btnPed.className = 'pos-subtab-btn active';
+        btnHis.className = 'pos-subtab-btn';
+        viewPed.className = 'pos-panel-body';
+        viewHis.className = 'pos-panel-body hidden space-y';
+      } else {
+        btnHis.className = 'pos-subtab-btn active';
+        btnPed.className = 'pos-subtab-btn';
+        viewHis.className = 'pos-panel-body space-y';
+        viewPed.className = 'pos-panel-body hidden';
+        renderOpenOrdersTable();
+        renderSalesHistory();
+      }
+    }
+
+    function startNewOrder() {
+      activeOrder = createEmptyOrderDraft();
+      document.getElementById('discountDrawer').className = 'discount-panel hidden';
+      switchPosSubtab('pedidos');
+      renderCart();
+    }
+
+    function syncCurrentOrderMeta() {
+      activeOrder.customer = document.getElementById('ticketCustomer').value;
+      activeOrder.comment = document.getElementById('ticketComment').value;
+      if (activeOrder.id) {
+        for (var i = 0; i < state.openOrders.length; i++) {
+          if (state.openOrders[i].id === activeOrder.id) {
+            state.openOrders[i].customer = activeOrder.customer;
+            state.openOrders[i].comment = activeOrder.comment;
+            break;
+          }
+        }
+        saveState();
+        renderOpenOrdersTable();
+      }
+    }
+
+    function findProductById(id) {
+      for (var i = 0; i < state.products.length; i++) {
+        if (state.products[i].id === id) return state.products[i];
+      }
+      return null;
+    }
+
+    function renderPOS() {
+      var grid = document.getElementById('posProductGrid');
+      var query = trimStr(document.getElementById('posSearchInput').value).toLowerCase();
+      var filteredProds = [];
+
+      for (var i = 0; i < state.products.length; i++) {
+        if (state.products[i].name.toLowerCase().indexOf(query) !== -1) {
+          filteredProds.push(state.products[i]);
+        }
+      }
+
+      if (filteredProds.length === 0) {
+        grid.innerHTML = '<p class="text-muted" style="font-size: 13px; padding: 16px;">No se encontraron productos.</p>';
+      } else {
+        var html = '';
+        for (var j = 0; j < filteredProds.length; j++) {
+          var p = filteredProds[j];
+          var stockLabel = '';
+          if (p.type === 'unit') {
+            var stk = getAvailableStock('product', p.id);
+            var minS = p.minStock !== undefined ? p.minStock : 5;
+            var cls = stk <= minS ? 'text-red' : '';
+            var fw = stk <= minS ? '700' : '400';
+            stockLabel = '<span class="' + cls + '" style="font-weight:' + fw + ';">Stock: ' + stk + ' u</span>';
+          } else {
+            stockLabel = '<span class="text-amber">Receta (' + p.recipe.length + ' ins.)</span>';
+          }
+          html += '<button type="button" onclick="addToCart(\'' + p.id + '\')" class="pos-item">' +
+                    '<div class="pos-item-name">' + p.name + '</div>' +
+                    '<div class="pos-item-meta">' + stockLabel + '</div>' +
+                    '<div class="pos-item-price">' + formatARS(p.price) + '</div>' +
+                  '</button>';
+        }
+        grid.innerHTML = html;
+      }
+
+      document.getElementById('openOrdersCountBadge').innerHTML = state.openOrders.length;
+      renderCart();
+      renderOpenOrdersTable();
+      renderSalesHistory();
+    }
+
+    function addToCart(productId) {
+      var existing = null;
+      for (var i = 0; i < activeOrder.items.length; i++) {
+        if (activeOrder.items[i].productId === productId) {
+          existing = activeOrder.items[i];
+          break;
+        }
+      }
+      if (existing) {
+        existing.qty += 1;
+      } else {
+        activeOrder.items.push({ productId: productId, qty: 1 });
+      }
+      if (activeOrder.id) {
+        for (var k = 0; k < state.openOrders.length; k++) {
+          if (state.openOrders[k].id === activeOrder.id) {
+            state.openOrders[k] = JSON.parse(JSON.stringify(activeOrder));
+            break;
+          }
+        }
+        saveState();
+        renderOpenOrdersTable();
+      }
+      renderCart();
+    }
+
+    function updateCartQty(productId, delta) {
+      var idx = -1;
+      for (var i = 0; i < activeOrder.items.length; i++) {
+        if (activeOrder.items[i].productId === productId) {
+          idx = i;
+          break;
+        }
+      }
+      if (idx === -1) return;
+      activeOrder.items[idx].qty += delta;
+      if (activeOrder.items[idx].qty <= 0) {
+        activeOrder.items.splice(idx, 1);
+      }
+      if (activeOrder.id) {
+        for (var k = 0; k < state.openOrders.length; k++) {
+          if (state.openOrders[k].id === activeOrder.id) {
+            state.openOrders[k] = JSON.parse(JSON.stringify(activeOrder));
+            break;
+          }
+        }
+        saveState();
+        renderOpenOrdersTable();
+      }
+      renderCart();
+    }
+
+    function clearCart() {
+      if (activeOrder.id) {
+        if (!confirm('¿Deseas cancelar y eliminar este pedido?')) return;
+        var remaining = [];
+        for (var i = 0; i < state.openOrders.length; i++) {
+          if (state.openOrders[i].id !== activeOrder.id) remaining.push(state.openOrders[i]);
+        }
+        state.openOrders = remaining;
+        saveState();
+      }
+      activeOrder = createEmptyOrderDraft();
+      document.getElementById('discountDrawer').className = 'discount-panel hidden';
+      renderAllViews();
+    }
+
+    function calculateOrderTotals(orderObj) {
+      var subtotal = 0;
+      for (var i = 0; i < orderObj.items.length; i++) {
+        var item = orderObj.items[i];
+        var prod = findProductById(item.productId);
+        if (prod) subtotal += prod.price * item.qty;
+      }
+
+      var discountAmount = 0;
+      if (orderObj.discount && orderObj.discount.value > 0) {
+        if (orderObj.discount.type === 'percent') {
+          discountAmount = subtotal * (Math.min(orderObj.discount.value, 100) / 100);
+        } else {
+          discountAmount = Math.min(orderObj.discount.value, subtotal);
+        }
+      }
+      var finalTotal = Math.max(0, subtotal - discountAmount);
+      return { subtotal: subtotal, discountAmount: discountAmount, finalTotal: finalTotal };
+    }
+
+    function toggleDiscountDrawer() {
+      var drawer = document.getElementById('discountDrawer');
+      if (drawer.className.indexOf('hidden') !== -1) {
+        drawer.className = 'discount-panel';
+      } else {
+        drawer.className = 'discount-panel hidden';
+      }
+    }
+
+    function toggleDiscountTypePlaceholder() {
+      var radios = document.getElementsByName('discountType');
+      var type = 'percent';
+      for (var i = 0; i < radios.length; i++) {
+        if (radios[i].checked) type = radios[i].value;
+      }
+      document.getElementById('discountUnitSymbol').innerHTML = type === 'percent' ? '%' : '$';
+    }
+
+    function cancelDiscount() {
+      document.getElementById('discountDrawer').className = 'discount-panel hidden';
+    }
+
+    function applyDiscount() {
+      var reason = trimStr(document.getElementById('discountReasonInput').value) || 'Sin motivo';
+      var radios = document.getElementsByName('discountType');
+      var type = 'percent';
+      for (var i = 0; i < radios.length; i++) {
+        if (radios[i].checked) type = radios[i].value;
+      }
+      var val = parseFloat(document.getElementById('discountValueInput').value);
+      if (isNaN(val) || val <= 0) {
+        alert('Ingresá un valor válido.');
+        return;
+      }
+      activeOrder.discount = { reason: reason, type: type, value: val };
+      document.getElementById('discountDrawer').className = 'discount-panel hidden';
+      if (activeOrder.id) saveState();
+      renderCart();
+    }
+
+    function removeDiscount() {
+      activeOrder.discount = null;
+      if (activeOrder.id) saveState();
+      renderCart();
+    }
+
+    function renderCart() {
+      var topBar = document.getElementById('ticketTopBar');
+      var headerTitle = document.getElementById('ticketHeaderTitle');
+
+      if (activeOrder.id) {
+        topBar.className = 'ticket-top-bar';
+        headerTitle.innerHTML = 'ID #' + activeOrder.number + ' (En Curso)';
+      } else {
+        topBar.className = 'ticket-top-bar new-order';
+        headerTitle.innerHTML = 'Nuevo Pedido';
+      }
+
+      document.getElementById('ticketStartTime').innerHTML = activeOrder.startTime;
+      document.getElementById('ticketCustomer').value = activeOrder.customer || '';
+      document.getElementById('ticketComment').value = activeOrder.comment || '';
+
+      var container = document.getElementById('cartItems');
+      var totalItemsCount = 0;
+      for (var i = 0; i < activeOrder.items.length; i++) {
+        totalItemsCount += activeOrder.items[i].qty;
+      }
+      document.getElementById('ticketItemsCount').innerHTML = totalItemsCount + ' ítem' + (totalItemsCount === 1 ? '' : 's');
+
+      if (activeOrder.items.length === 0) {
+        container.innerHTML = '<p class="text-muted text-center" style="padding: 24px 0; font-size: 13px;">No hay productos en el pedido</p>';
+        document.getElementById('cartTotal').innerHTML = formatARS(0);
+        document.getElementById('appliedDiscountBanner').className = 'hidden';
+        return;
+      }
+
+      var html = '';
+      for (var j = 0; j < activeOrder.items.length; j++) {
+        var item = activeOrder.items[j];
+        var prod = findProductById(item.productId);
+        if (!prod) continue;
+        html += '<div class="cart-row">' +
+                  '<div style="float: left; width: 52%;">' +
+                    '<div style="font-weight: 700; color: #1c1917;">' + prod.name + '</div>' +
+                    '<div style="font-size: 11px; color: #78716c;">' + formatARS(prod.price) + ' c/u</div>' +
+                  '</div>' +
+                  '<div style="float: left; width: 24%; text-align: center;">' +
+                    '<button type="button" onclick="updateCartQty(\'' + prod.id + '\', -1)" class="btn-qty">-</button>' +
+                    '<span style="display:inline-block; width: 22px; text-align: center; font-weight: 700;">' + item.qty + '</span>' +
+                    '<button type="button" onclick="updateCartQty(\'' + prod.id + '\', 1)" class="btn-qty">+</button>' +
+                  '</div>' +
+                  '<div style="float: right; width: 24%; text-align: right; font-weight: 700;">' + formatARS(prod.price * item.qty) + '</div>' +
+                '</div>';
+      }
+      container.innerHTML = html;
+
+      var totals = calculateOrderTotals(activeOrder);
+      var discBanner = document.getElementById('appliedDiscountBanner');
+      if (activeOrder.discount && totals.discountAmount > 0) {
+        discBanner.className = '';
+        document.getElementById('appliedDiscountText').innerHTML = '🏷️ Dto (' + activeOrder.discount.reason + '): -' + formatARS(totals.discountAmount);
+      } else {
+        discBanner.className = 'hidden';
+      }
+
+      document.getElementById('cartTotal').innerHTML = formatARS(totals.finalTotal);
+    }
+
+    function saveOrderAsInProgress() {
+      if (activeOrder.items.length === 0) {
+        alert('Agregá productos.');
+        return;
+      }
+      activeOrder.customer = trimStr(document.getElementById('ticketCustomer').value);
+      activeOrder.comment = trimStr(document.getElementById('ticketComment').value);
+
+      if (!activeOrder.id) {
+        activeOrder.id = 'ord_' + new Date().getTime();
+        activeOrder.number = state.orderCounter++;
+        state.openOrders.unshift(JSON.parse(JSON.stringify(activeOrder)));
+      } else {
+        for (var i = 0; i < state.openOrders.length; i++) {
+          if (state.openOrders[i].id === activeOrder.id) {
+            state.openOrders[i] = JSON.parse(JSON.stringify(activeOrder));
+            break;
+          }
+        }
+      }
+
+      saveState();
+      alert('🕒 Pedido ID #' + activeOrder.number + ' guardado en curso.');
+      activeOrder = createEmptyOrderDraft();
+      renderAllViews();
+    }
+
+    function openInProgressOrder(orderId) {
+      var found = null;
+      for (var i = 0; i < state.openOrders.length; i++) {
+        if (state.openOrders[i].id === orderId) {
+          found = state.openOrders[i];
+          break;
+        }
+      }
+      if (!found) return;
+      activeOrder = JSON.parse(JSON.stringify(found));
+      document.getElementById('discountDrawer').className = 'discount-panel hidden';
+      switchPosSubtab('pedidos');
+      renderCart();
+      renderOpenOrdersTable();
+    }
+
+    function renderOpenOrdersTable() {
+      var tbody = document.getElementById('openOrdersTableBody');
+      if (!tbody) return;
+      if (state.openOrders.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted" style="padding: 16px;">Sin ventas en curso.</td></tr>';
+        return;
+      }
+      var html = '';
+      for (var i = 0; i < state.openOrders.length; i++) {
+        var o = state.openOrders[i];
+        var totals = calculateOrderTotals(o);
+        var rowCls = (activeOrder.id === o.id) ? 'order-row-active' : '';
+        html += '<tr class="' + rowCls + '">' +
+                  '<td style="font-weight: 800;">#' + o.number + '</td>' +
+                  '<td class="text-muted">' + o.startTime + '</td>' +
+                  '<td><span class="status-pill-open">En curso</span></td>' +
+                  '<td>' + (o.customer || '-') + '</td>' +
+                  '<td>' + o.items.length + ' ítems</td>' +
+                  '<td class="text-right" style="font-weight: 800;">' + formatARS(totals.finalTotal) + '</td>' +
+                  '<td class="text-center">' +
+                    '<button type="button" onclick="openInProgressOrder(\'' + o.id + '\')" style="background: #fde047; border: 1px solid #eab308; color: #422006; font-weight: 800; padding: 6px 12px; border-radius: 4px; cursor: pointer;">→</button>' +
+                  '</td>' +
+                '</tr>';
+      }
+      tbody.innerHTML = html;
+    }
+
+    function selectPayment(method) {
+      selectedPayment = method;
+      var methods = ['Efectivo', 'Tarjeta', 'QR'];
+      for (var i = 0; i < methods.length; i++) {
+        var m = methods[i];
+        document.getElementById('pay-' + m).className = (m === method) ? 'pay-btn pay-btn-active' : 'pay-btn';
+      }
+    }
+
+    function openCloseOrderModal() {
+      if (activeOrder.items.length === 0) {
+        alert('Agregá productos.');
+        return;
+      }
+      var totals = calculateOrderTotals(activeOrder);
+      document.getElementById('closeOrderSummaryText').innerHTML = 'Cerrando Pedido ID #' + (activeOrder.number || 'Nuevo');
+      document.getElementById('modalSubtotal').innerHTML = formatARS(totals.subtotal);
+      var discRow = document.getElementById('modalDiscountRow');
+      if (totals.discountAmount > 0) {
+        discRow.className = '';
+        document.getElementById('modalDiscountLabel').innerHTML = 'Descuento (' + (activeOrder.discount ? activeOrder.discount.reason : '') + '):';
+        document.getElementById('modalDiscountAmount').innerHTML = '- ' + formatARS(totals.discountAmount);
+      } else {
+        discRow.className = 'hidden';
+      }
+      document.getElementById('modalFinalTotal').innerHTML = formatARS(totals.finalTotal);
+      selectPayment('Efectivo');
+      document.getElementById('closeOrderModal').className = 'modal-overlay';
+    }
+
+    function closeCloseOrderModal() {
+      document.getElementById('closeOrderModal').className = 'modal-overlay hidden';
+    }
+
+    function confirmCloseOrder() {
+      var totals = calculateOrderTotals(activeOrder);
+      var saleCogs = 0;
+      var itemsDetail = [];
+
+      for (var i = 0; i < activeOrder.items.length; i++) {
+        var item = activeOrder.items[i];
+        var prod = findProductById(item.productId);
+        if (!prod) continue;
+        itemsDetail.push(item.qty + 'x ' + prod.name);
+        if (prod.type === 'unit') {
+          saleCogs += consumeFifoStock('product', prod.id, item.qty);
+        } else {
+          for (var j = 0; j < prod.recipe.length; j++) {
+            var r = prod.recipe[j];
+            saleCogs += consumeFifoStock('ingredient', r.ingredientId, r.qty * item.qty);
+          }
+        }
+      }
+
+      var user = getCurrentUser();
+      var orderNum = activeOrder.number || state.orderCounter++;
+      var saleRecord = {
+        id: 'v_' + new Date().getTime(),
+        number: orderNum,
+        date: nowStr(),
+        shift: user ? user.fullName : 'Operador',
+        customer: trimStr(document.getElementById('ticketCustomer').value),
+        payment: selectedPayment,
+        items: itemsDetail.join(', '),
+        subtotal: totals.subtotal,
+        discountAmount: totals.discountAmount,
+        total: totals.finalTotal,
+        cogs: saleCogs
+      };
+
+      state.sales.unshift(saleRecord);
+      if (activeOrder.id) {
+        var remaining = [];
+        for (var k = 0; k < state.openOrders.length; k++) {
+          if (state.openOrders[k].id !== activeOrder.id) remaining.push(state.openOrders[k]);
+        }
+        state.openOrders = remaining;
+      }
+
+      if (selectedPayment === 'Efectivo') {
+        state.cashMovements.push({
+          id: 'cm_' + new Date().getTime(),
+          date: saleRecord.date,
+          shift: saleRecord.shift,
+          type: 'VENTA_EFECTIVO',
+          concept: 'Venta #' + orderNum,
+          amount: totals.finalTotal
+        });
+      }
+
+      saveState();
+      closeCloseOrderModal();
+      activeOrder = createEmptyOrderDraft();
+      renderAllViews();
+      alert('✅ Pedido #' + orderNum + ' cobrado (' + selectedPayment + ')');
+    }
+
+    function deleteSaleRecord(saleId) {
+      if (!isAdmin()) return;
+      if (!confirm('¿Eliminar esta venta del historial?')) return;
+      var next = [];
+      for (var i = 0; i < state.sales.length; i++) {
+        if (state.sales[i].id !== saleId) next.push(state.sales[i]);
+      }
+      state.sales = next;
+      saveState();
+      renderAllViews();
+    }
+
+    function renderSalesHistory() {
+      var tbody = document.getElementById('salesHistoryBody');
+      if (!tbody) return;
+
+      var shiftSel = document.getElementById('salesFilterShift');
+      var currentFilter = shiftSel ? shiftSel.value : 'ALL';
+
+      // Poblar filtro de operadores
+      if (shiftSel) {
+        var seenShifts = {};
+        var optsHtml = '<option value="ALL">Todos los operadores</option>';
+        for (var sIdx = 0; sIdx < state.sales.length; sIdx++) {
+          var sh = state.sales[sIdx].shift;
+          if (sh && !seenShifts[sh]) {
+            seenShifts[sh] = true;
+            optsHtml += '<option value="' + sh + '"' + (currentFilter === sh ? ' selected' : '') + '>' + sh + '</option>';
+          }
+        }
+        shiftSel.innerHTML = optsHtml;
+      }
+
+      var adminMode = isAdmin();
+      var adminHeader = document.getElementById('salesHeaderAction');
+      if (adminHeader) {
+        adminHeader.className = adminMode ? 'text-center' : 'text-center hidden';
+      }
+
+      var filtered = [];
+      for (var i = 0; i < state.sales.length; i++) {
+        if (currentFilter === 'ALL' || state.sales[i].shift === currentFilter) {
+          filtered.push(state.sales[i]);
+        }
+      }
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="' + (adminMode ? 9 : 8) + '" class="text-center text-muted" style="padding: 16px;">Sin ventas cerradas.</td></tr>';
+        return;
+      }
+
+      var html = '';
+      for (var j = 0; j < filtered.length; j++) {
+        var s = filtered[j];
+        html += '<tr>' +
+                  '<td style="font-weight: 700;">#' + s.number + '</td>' +
+                  '<td class="text-muted">' + s.date + '</td>' +
+                  '<td><span class="status-pill-closed">Cerrada</span></td>' +
+                  '<td>' + (s.customer || '-') + '</td>' +
+                  '<td>' + s.items + '</td>' +
+                  '<td><span class="badge badge-gray">' + s.payment + '</span></td>' +
+                  '<td class="text-right" style="font-weight: 700;">' + formatARS(s.total) + '</td>' +
+                  '<td class="text-right text-amber">' + formatARS(s.cogs) + '</td>' +
+                  (adminMode ? '<td class="text-center"><button type="button" onclick="deleteSaleRecord(\'' + s.id + '\')" class="btn-xs btn-xs-danger">✕</button></td>' : '') +
+                '</tr>';
+      }
+      tbody.innerHTML = html;
+    }
+
+    /* ==========================================================================
+       ARQUEO DE CAJA
+       ========================================================================== */
+    function getPreviousDayClosingBalance(targetDateStr) {
+      var parts = targetDateStr.split('/');
+      var targetDateObj = new Date(Number(parts[2]), Number(parts[1]) - 1, Number(parts[0]));
+      
+      for (var i = 1; i <= 30; i++) {
+        targetDateObj.setDate(targetDateObj.getDate() - 1);
+        var prevDateStr = pad2(targetDateObj.getDate()) + '/' + pad2(targetDateObj.getMonth() + 1) + '/' + targetDateObj.getFullYear();
+
+        var prevMovements = [];
+        for (var j = 0; j < state.cashMovements.length; j++) {
+          if (state.cashMovements[j].date && state.cashMovements[j].date.indexOf(prevDateStr) === 0) {
+            prevMovements.push(state.cashMovements[j]);
+          }
+        }
+
+        if (prevMovements.length > 0) {
+          var init = 0, sales = 0, outs = 0;
+          for (var k = 0; k < prevMovements.length; k++) {
+            var m = prevMovements[k];
+            if (m.type === 'INICIAL') init = m.amount;
+            if (m.type === 'VENTA_EFECTIVO') sales += m.amount;
+            if (m.type === 'SALIDA') outs += m.amount;
+          }
+          return init + sales - outs;
+        }
+      }
+      return 15000;
+    }
+
+    function deleteCashMovement(movId) {
+      if (!isAdmin()) return;
+      if (!confirm('¿Eliminar este movimiento de caja?')) return;
+      var next = [];
+      for (var i = 0; i < state.cashMovements.length; i++) {
+        if (state.cashMovements[i].id !== movId) next.push(state.cashMovements[i]);
+      }
+      state.cashMovements = next;
+      saveState();
+      renderCashSession();
+    }
+
+    function renderCashSession() {
+      var dateInput = document.getElementById('cashFilterDateInput');
+      var dateInputVal = dateInput.value || getTodayInputStr();
+      dateInput.value = dateInputVal;
+
+      var parts = dateInputVal.split('-');
+      var formattedDateSearch = parts[2] + '/' + parts[1] + '/' + parts[0];
+      document.getElementById('cashDate').value = formattedDateSearch;
+
+      var dayMovements = [];
+      for (var i = 0; i < state.cashMovements.length; i++) {
+        var m = state.cashMovements[i];
+        if (m.date && m.date.indexOf(formattedDateSearch) === 0) {
+          dayMovements.push(m);
+        }
+      }
+
+      var initialCash = 0, cashSales = 0, cashOut = 0, foundInit = false, lastClose = null;
+      for (var j = 0; j < dayMovements.length; j++) {
+        var mov = dayMovements[j];
+        if (mov.type === 'INICIAL') {
+          initialCash = mov.amount;
+          foundInit = true;
+        }
+        if (mov.type === 'VENTA_EFECTIVO') cashSales += mov.amount;
+        if (mov.type === 'SALIDA') cashOut += mov.amount;
+        if (mov.type === 'CIERRE') lastClose = mov;
+      }
+
+      if (!foundInit) {
+        initialCash = getPreviousDayClosingBalance(formattedDateSearch);
+      }
+      document.getElementById('cashInitialAmount').value = initialCash;
+
+      var expected = initialCash + cashSales - cashOut;
+      document.getElementById('kpiCashInit').innerHTML = formatARS(initialCash);
+      document.getElementById('kpiCashSales').innerHTML = formatARS(cashSales);
+      document.getElementById('kpiCashOut').innerHTML = formatARS(cashOut);
+      document.getElementById('kpiCashExpected').innerHTML = formatARS(expected);
+
+      var banner = document.getElementById('cashCloseStatusBanner');
+      if (lastClose) {
+        var diff = lastClose.amount - expected;
+        var diffLabel = diff === 0 ? 'Sin diferencia ($ 0,00)' : (diff > 0 ? 'Sobrante: +' + formatARS(diff) : 'Faltante: ' + formatARS(diff));
+        banner.style.display = 'block';
+        banner.innerHTML = '🔒 <strong>Caja Cerrada:</strong> Contado ' + formatARS(lastClose.amount) + ' · ' + diffLabel;
+      } else {
+        banner.style.display = 'none';
+      }
+
+      var adminMode = isAdmin();
+      var cashAdminTh = document.getElementById('cashHeaderAction');
+      if (cashAdminTh) cashAdminTh.className = adminMode ? 'text-center' : 'text-center hidden';
+
+      var tbody = document.getElementById('cashMovementsBody');
+      if (dayMovements.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="' + (adminMode ? 6 : 5) + '" class="text-center text-muted" style="padding:16px;">Sin movimientos hoy.</td></tr>';
+      } else {
+        var html = '';
+        for (var k = dayMovements.length - 1; k >= 0; k--) {
+          var item = dayMovements[k];
+          html += '<tr>' +
+                    '<td class="text-muted">' + item.date + '</td>' +
+                    '<td>' + item.shift + '</td>' +
+                    '<td><span class="badge badge-gray">' + item.type + '</span></td>' +
+                    '<td>' + item.concept + '</td>' +
+                    '<td class="text-right" style="font-weight:700;">' + formatARS(item.amount) + '</td>' +
+                    (adminMode ? '<td class="text-center"><button type="button" onclick="deleteCashMovement(\'' + item.id + '\')" class="btn-xs btn-xs-danger">✕</button></td>' : '') +
+                  '</tr>';
+        }
+        tbody.innerHTML = html;
+      }
+    }
+
+    function setInitialCash(e) {
+      if (e && e.preventDefault) e.preventDefault();
+      var amount = parseFloat(document.getElementById('cashInitialAmount').value);
+      var reason = trimStr(document.getElementById('cashInitReason').value) || 'Fondo Inicial';
+      var selectedDate = document.getElementById('cashDate').value;
+      var d = new Date();
+      var dateStamp = selectedDate + ' ' + pad2(d.getHours()) + ':' + pad2(d.getMinutes());
+
+      state.cashMovements.push({
+        id: 'cm_' + new Date().getTime(),
+        date: dateStamp,
+        shift: getCurrentUser().fullName,
+        type: 'INICIAL',
+        concept: reason,
+        amount: amount
+      });
+      saveState();
+      renderCashSession();
+      alert('✅ Caja inicial guardada.');
+      return false;
+    }
+
+    function registerCashOut(e) {
+      if (e && e.preventDefault) e.preventDefault();
+      var concept = trimStr(document.getElementById('cashOutReason').value);
+      var amount = parseFloat(document.getElementById('cashOutAmount').value);
+      state.cashMovements.push({
+        id: 'cm_' + new Date().getTime(),
+        date: nowStr(),
+        shift: getCurrentUser().fullName,
+        type: 'SALIDA',
+        concept: concept,
+        amount: amount
+      });
+      saveState();
+      document.getElementById('cashOutReason').value = '';
+      document.getElementById('cashOutAmount').value = '';
+      renderCashSession();
+      alert('✅ Salida registrada.');
+      return false;
+    }
+
+    function closeDailyCash(e) {
+      if (e && e.preventDefault) e.preventDefault();
+      var countedReal = parseFloat(document.getElementById('cashCountedReal').value);
+      state.cashMovements.push({
+        id: 'cm_close_' + new Date().getTime(),
+        date: nowStr(),
+        shift: getCurrentUser().fullName,
+        type: 'CIERRE',
+        concept: 'Cierre: ' + formatARS(countedReal),
+        amount: countedReal
+      });
+      saveState();
+      document.getElementById('cashCountedReal').value = '';
+      renderCashSession();
+      alert('🔒 Cierre diario registrado.');
+      return false;
+    }
+
+    /* ==========================================================================
+       PRODUCTOS Y RECETAS
+       ========================================================================== */
+    function toggleProductTypeUI() {
+      var type = document.getElementById('prodType').value;
+      document.getElementById('recipeBuilder').className = (type === 'recipe') ? 'recipe-box space-y-sm' : 'recipe-box space-y-sm hidden';
+      document.getElementById('unitInfoBox').className = (type === 'unit') ? 'info-box' : 'info-box hidden';
+    }
+
+    function addRecipeRow(selectedIngId, selectedQty) {
+      var container = document.getElementById('recipeRows');
+      var row = document.createElement('div');
+      row.className = 'recipe-row';
+      row.style.marginBottom = '8px';
+      var opts = '';
+      for (var i = 0; i < state.ingredients.length; i++) {
+        var ing = state.ingredients[i];
+        var selAttr = (selectedIngId && selectedIngId === ing.id) ? ' selected' : '';
+        opts += '<option value="' + ing.id + '"' + selAttr + '>' + ing.name + ' (' + ing.unit + ')</option>';
+      }
+      var qtyVal = selectedQty !== undefined ? selectedQty : '';
+      row.innerHTML = '<select class="ing-select input-ctrl" style="width: 55%; display:inline-block; padding: 6px;">' + opts + '</select> ' +
+                      '<input type="number" step="0.01" min="0.01" placeholder="Cant" value="' + qtyVal + '" required class="ing-qty" style="width: 30%; display:inline-block; padding: 6px;"> ' +
+                      '<button type="button" onclick="this.parentNode.parentNode.removeChild(this.parentNode)" style="background:none; border:none; color:#dc2626; font-weight:700; cursor:pointer; padding:4px;">✕</button>';
+      container.appendChild(row);
+    }
+
+    function editProduct(prodId) {
+      var p = findProductById(prodId);
+      if (!p) return;
+      document.getElementById('editProdId').value = p.id;
+      document.getElementById('prodFormTitle').innerHTML = 'Editar Producto';
+      document.getElementById('prodSubmitBtn').innerHTML = 'Actualizar Producto';
+      document.getElementById('prodCancelBtn').className = 'btn-outline';
+      document.getElementById('prodName').value = p.name;
+      document.getElementById('prodPrice').value = p.price;
+      document.getElementById('prodType').value = p.type;
+      toggleProductTypeUI();
+      document.getElementById('recipeRows').innerHTML = '';
+      if (p.type === 'recipe' && p.recipe) {
+        for (var i = 0; i < p.recipe.length; i++) {
+          addRecipeRow(p.recipe[i].ingredientId, p.recipe[i].qty);
+        }
+      }
+    }
+
+    function resetProductForm() {
+      document.getElementById('editProdId').value = '';
+      document.getElementById('prodFormTitle').innerHTML = 'Nuevo Producto';
+      document.getElementById('prodSubmitBtn').innerHTML = 'Guardar Producto';
+      document.getElementById('prodCancelBtn').className = 'btn-outline hidden';
+      document.getElementById('prodName').value = '';
+      document.getElementById('prodPrice').value = '';
+      document.getElementById('prodType').value = 'recipe';
+      toggleProductTypeUI();
+      document.getElementById('recipeRows').innerHTML = '';
+    }
+
+    function deleteProduct(prodId) {
+      if (!confirm('¿Eliminar este producto del catálogo?')) return;
+      var next = [];
+      for (var i = 0; i < state.products.length; i++) {
+        if (state.products[i].id !== prodId) next.push(state.products[i]);
+      }
+      state.products = next;
+      saveState();
+      renderAllViews();
+    }
+
+    function saveProduct(e) {
+      if (e && e.preventDefault) e.preventDefault();
+      var editId = document.getElementById('editProdId').value;
+      var name = trimStr(document.getElementById('prodName').value);
+      var price = parseFloat(document.getElementById('prodPrice').value);
+      var type = document.getElementById('prodType').value;
+      var recipe = [];
+
+      if (type === 'recipe') {
+        var rows = document.getElementsByClassName('recipe-row');
+        for (var i = 0; i < rows.length; i++) {
+          var sel = rows[i].getElementsByClassName('ing-select')[0];
+          var qtyInp = rows[i].getElementsByClassName('ing-qty')[0];
+          recipe.push({ ingredientId: sel.value, qty: parseFloat(qtyInp.value) });
+        }
+      }
+
+      if (editId) {
+        var p = findProductById(editId);
+        if (p) {
+          p.name = name;
+          p.price = price;
+          p.type = type;
+          p.recipe = recipe;
+        }
+      } else {
+        state.products.push({ id: 'prod_' + new Date().getTime(), name: name, price: price, type: type, minStock: 5, recipe: recipe });
+      }
+
+      saveState();
+      resetProductForm();
+      renderAllViews();
+      alert('✅ Producto guardado.');
+      return false;
+    }
+
+    function renderProducts() {
+      var html = '';
+      for (var i = 0; i < state.products.length; i++) {
+        var p = state.products[i];
+        var cost = getProductCurrentFifoCost(p);
+        var margin = p.price - cost;
+        var compLabel = 'Unidad Directa';
+        if (p.type === 'recipe') {
+          var parts = [];
+          for (var r = 0; r < p.recipe.length; r++) {
+            parts.push(getItemNameById('ingredient', p.recipe[r].ingredientId) + ' (' + p.recipe[r].qty + ')');
+          }
+          compLabel = parts.length > 0 ? parts.join(', ') : 'Receta vacía';
+        }
+        html += '<tr>' +
+                  '<td style="font-weight: 700;">' + p.name + '</td>' +
+                  '<td class="text-muted" style="font-size:12px;">' + compLabel + '</td>' +
+                  '<td class="text-right">' + formatARS(p.price) + '</td>' +
+                  '<td class="text-right text-amber">' + formatARS(cost) + '</td>' +
+                  '<td class="text-right text-green">' + formatARS(margin) + '</td>' +
+                  '<td class="text-center">' +
+                    '<button type="button" onclick="editProduct(\'' + p.id + '\')" class="btn-xs">✏️</button> ' +
+                    '<button type="button" onclick="deleteProduct(\'' + p.id + '\')" class="btn-xs btn-xs-danger">✕</button>' +
+                  '</td>' +
+                '</tr>';
+      }
+      document.getElementById('productsTableBody').innerHTML = html;
+    }
+
+    /* ==========================================================================
+       STOCK, COMPRAS Y DESPERDICIOS (FIFO)
+       ========================================================================== */
+    function toggleStockElementKindUI() {
+      var kind = document.getElementById('stockElementKind').value;
+      document.getElementById('stockUnitFieldsRow').className = (kind === 'ingredient') ? 'form-row-2' : 'form-row-2 hidden';
+      document.getElementById('stockProductPriceRow').className = (kind === 'product_unit') ? 'form-row-2' : 'form-row-2 hidden';
+    }
+
+    function saveStockElement(e) {
+      if (e && e.preventDefault) e.preventDefault();
+      var editId = document.getElementById('editStockElementId').value;
+      var kind = document.getElementById('stockElementKind').value;
+      var name = trimStr(document.getElementById('ingName').value);
+
+      if (kind === 'ingredient') {
+        var unit = document.getElementById('ingUnit').value;
+        var minStock = parseFloat(document.getElementById('ingMinStock').value) || 0;
+        if (editId) {
+          for (var i = 0; i < state.ingredients.length; i++) {
+            if (state.ingredients[i].id === editId) {
+              state.ingredients[i].name = name;
+              state.ingredients[i].unit = unit;
+              state.ingredients[i].minStock = minStock;
+              break;
+            }
+          }
+        } else {
+          state.ingredients.push({ id: 'ing_' + new Date().getTime(), name: name, unit: unit, minStock: minStock });
+        }
+      } else {
+        var price = parseFloat(document.getElementById('stockProdPrice').value) || 0;
+        var prodMin = parseFloat(document.getElementById('stockProdMin').value) || 5;
+        if (editId) {
+          var p = findProductById(editId);
+          if (p) {
+            p.name = name;
+            p.price = price;
+            p.minStock = prodMin;
+          }
+        } else {
+          state.products.push({ id: 'prod_' + new Date().getTime(), name: name, price: price, type: 'unit', minStock: prodMin, recipe: [] });
+        }
+      }
+
+      saveState();
+      resetStockElementForm();
+      renderAllViews();
+      alert('✅ Elemento de stock guardado.');
+      return false;
+    }
+
+    function editStockElement(kind, id) {
+      document.getElementById('editStockElementId').value = id;
+      document.getElementById('editStockElementOriginalKind').value = kind;
+      document.getElementById('stockElementKind').value = kind;
+      document.getElementById('stockElementKind').disabled = true;
+      document.getElementById('stockElementFormTitle').innerHTML = 'Editar Elemento Stock';
+      document.getElementById('stockElementSubmitBtn').innerHTML = 'Actualizar';
+      document.getElementById('stockElementCancelBtn').className = 'btn-outline';
+      toggleStockElementKindUI();
+
+      if (kind === 'ingredient') {
+        for (var i = 0; i < state.ingredients.length; i++) {
+          if (state.ingredients[i].id === id) {
+            document.getElementById('ingName').value = state.ingredients[i].name;
+            document.getElementById('ingUnit').value = state.ingredients[i].unit;
+            document.getElementById('ingMinStock').value = state.ingredients[i].minStock;
+            break;
+          }
+        }
+      } else {
+        var p = findProductById(id);
+        if (p) {
+          document.getElementById('ingName').value = p.name;
+          document.getElementById('stockProdPrice').value = p.price;
+          document.getElementById('stockProdMin').value = p.minStock || 5;
+        }
+      }
+    }
+
+    function resetStockElementForm() {
+      document.getElementById('editStockElementId').value = '';
+      document.getElementById('editStockElementOriginalKind').value = '';
+      document.getElementById('stockElementKind').disabled = false;
+      document.getElementById('stockElementKind').value = 'ingredient';
+      document.getElementById('stockElementFormTitle').innerHTML = 'Agregar Elemento Stock';
+      document.getElementById('stockElementSubmitBtn').innerHTML = 'Crear Elemento';
+      document.getElementById('stockElementCancelBtn').className = 'btn-outline hidden';
+      document.getElementById('ingName').value = '';
+      document.getElementById('ingMinStock').value = '200';
+      document.getElementById('stockProdPrice').value = '';
+      document.getElementById('stockProdMin').value = '5';
+      toggleStockElementKindUI();
+    }
+
+    function registerPurchase(e) {
+      if (e && e.preventDefault) e.preventDefault();
+      var parts = document.getElementById('purchaseItemSelect').value.split('|');
+      var qty = parseFloat(document.getElementById('purchaseQty').value);
+      var totalCost = parseFloat(document.getElementById('purchaseTotalCost').value);
+
+      state.batches.push({
+        id: 'b_' + new Date().getTime(),
+        itemType: parts[0],
+        itemId: parts[1],
+        initialQty: qty,
+        remainingQty: qty,
+        totalCost: totalCost,
+        unitCost: totalCost / qty,
+        date: nowStr()
+      });
+      saveState();
+      document.getElementById('purchaseQty').value = '';
+      document.getElementById('purchaseTotalCost').value = '';
+      renderAllViews();
+      alert('✅ Lote ingresado.');
+      return false;
+    }
+
+    function registerWaste(e) {
+      if (e && e.preventDefault) e.preventDefault();
+      var parts = document.getElementById('wasteItemSelect').value.split('|');
+      var qty = parseFloat(document.getElementById('wasteQty').value);
+      var reason = trimStr(document.getElementById('wasteReason').value);
+      var cost = consumeFifoStock(parts[0], parts[1], qty);
+
+      state.wastes.unshift({
+        id: 'w_' + new Date().getTime(),
+        date: nowStr(),
+        operator: getCurrentUser().fullName,
+        itemType: parts[0],
+        itemId: parts[1],
+        qty: qty,
+        reason: reason,
+        cost: cost
+      });
+      saveState();
+      document.getElementById('wasteQty').value = '';
+      document.getElementById('wasteReason').value = '';
+      renderAllViews();
+      alert('🗑️ Desperdicio registrado.');
+      return false;
+    }
+
+    function deleteWasteRecord(wasteId) {
+      if (!isAdmin()) return;
+      if (!confirm('¿Eliminar este registro de desperdicio?')) return;
+      var next = [];
+      for (var i = 0; i < state.wastes.length; i++) {
+        if (state.wastes[i].id !== wasteId) next.push(state.wastes[i]);
+      }
+      state.wastes = next;
+      saveState();
+      renderAllViews();
+    }
+
+    function deleteBatchRecord(batchId) {
+      if (!isAdmin()) return;
+      if (!confirm('¿Eliminar este lote de compra?')) return;
+      var next = [];
+      for (var i = 0; i < state.batches.length; i++) {
+        if (state.batches[i].id !== batchId) next.push(state.batches[i]);
+      }
+      state.batches = next;
+      saveState();
+      renderAllViews();
+    }
+
+    function getItemNameById(type, id) {
+      if (type === 'ingredient') {
+        for (var i = 0; i < state.ingredients.length; i++) {
+          if (state.ingredients[i].id === id) return state.ingredients[i].name;
+        }
+      } else {
+        var p = findProductById(id);
+        if (p) return p.name;
+      }
+      return id;
+    }
+
+    function renderStock() {
+      var options = '';
+      for (var i = 0; i < state.ingredients.length; i++) {
+        var ing = state.ingredients[i];
+        options += '<option value="ingredient|' + ing.id + '">[Ingrediente] ' + ing.name + '</option>';
+      }
+      for (var j = 0; j < state.products.length; j++) {
+        var p = state.products[j];
+        if (p.type === 'unit') {
+          options += '<option value="product|' + p.id + '">[Producto] ' + p.name + '</option>';
+        }
+      }
+      document.getElementById('purchaseItemSelect').innerHTML = options;
+      document.getElementById('wasteItemSelect').innerHTML = options;
+
+      var stockHtml = '';
+      for (var k = 0; k < state.ingredients.length; k++) {
+        var item = state.ingredients[k];
+        var qty = 0, val = 0, lotes = 0;
+        for (var bIdx = 0; bIdx < state.batches.length; bIdx++) {
+          var b = state.batches[bIdx];
+          if (b.itemType === 'ingredient' && b.itemId === item.id && b.remainingQty > 0) {
+            qty += b.remainingQty;
+            val += (b.remainingQty * b.unitCost);
+            lotes++;
+          }
+        }
+        var lowCls = qty <= item.minStock ? 'text-red' : '';
+        stockHtml += '<tr>' +
+                       '<td style="font-weight: 700;">' + item.name + '</td>' +
+                       '<td>Ingrediente</td>' +
+                       '<td class="text-right ' + lowCls + '" style="font-weight:700;">' + qty + ' ' + item.unit + '</td>' +
+                       '<td class="text-right">' + formatARS(val) + '</td>' +
+                       '<td>' + lotes + ' lote(s)</td>' +
+                       '<td class="text-center"><button type="button" onclick="editStockElement(\'ingredient\', \'' + item.id + '\')" class="btn-xs">✏️</button></td>' +
+                     '</tr>';
+      }
+      for (var pIdx = 0; pIdx < state.products.length; pIdx++) {
+        var prod = state.products[pIdx];
+        if (prod.type === 'unit') {
+          var pQty = 0, pVal = 0, pLotes = 0;
+          for (var pbIdx = 0; pbIdx < state.batches.length; pbIdx++) {
+            var pb = state.batches[pbIdx];
+            if (pb.itemType === 'product' && pb.itemId === prod.id && pb.remainingQty > 0) {
+              pQty += pb.remainingQty;
+              pVal += (pb.remainingQty * pb.unitCost);
+              pLotes++;
+            }
+          }
+          var pLowCls = pQty <= (prod.minStock || 5) ? 'text-red' : '';
+          stockHtml += '<tr>' +
+                         '<td style="font-weight: 700;">' + prod.name + '</td>' +
+                         '<td>Producto Unidad</td>' +
+                         '<td class="text-right ' + pLowCls + '" style="font-weight:700;">' + pQty + ' u</td>' +
+                         '<td class="text-right">' + formatARS(pVal) + '</td>' +
+                         '<td>' + pLotes + ' lote(s)</td>' +
+                         '<td class="text-center"><button type="button" onclick="editStockElement(\'product_unit\', \'' + prod.id + '\')" class="btn-xs">✏️</button></td>' +
+                       '</tr>';
+        }
+      }
+      document.getElementById('stockTableBody').innerHTML = stockHtml;
+
+      var adminMode = isAdmin();
+      document.getElementById('wasteHeaderAction').className = adminMode ? 'text-center' : 'text-center hidden';
+      document.getElementById('purchasesHeaderAction').className = adminMode ? 'text-center' : 'text-center hidden';
+
+      var wasteHtml = '';
+      for (var wIdx = 0; wIdx < state.wastes.length; wIdx++) {
+        var w = state.wastes[wIdx];
+        wasteHtml += '<tr>' +
+                       '<td class="text-muted">' + w.date + '</td>' +
+                       '<td>' + w.operator + '</td>' +
+                       '<td>' + getItemNameById(w.itemType, w.itemId) + '</td>' +
+                       '<td class="text-right">' + w.qty + '</td>' +
+                       '<td>' + w.reason + '</td>' +
+                       '<td class="text-right text-red">' + formatARS(w.cost) + '</td>' +
+                       (adminMode ? '<td class="text-center"><button type="button" onclick="deleteWasteRecord(\'' + w.id + '\')" class="btn-xs btn-xs-danger">✕</button></td>' : '') +
+                     '</tr>';
+      }
+      document.getElementById('wasteHistoryBody').innerHTML = wasteHtml || '<tr><td colspan="' + (adminMode ? 7 : 6) + '" class="text-center text-muted">Sin desperdicios.</td></tr>';
+
+      var purchHtml = '';
+      for (var cIdx = state.batches.length - 1; cIdx >= 0; cIdx--) {
+        var batch = state.batches[cIdx];
+        purchHtml += '<tr>' +
+                       '<td class="text-muted">' + batch.date + '</td>' +
+                       '<td>' + getItemNameById(batch.itemType, batch.itemId) + '</td>' +
+                       '<td class="text-right">' + batch.initialQty + '</td>' +
+                       '<td class="text-right">' + batch.remainingQty + '</td>' +
+                       '<td class="text-right">' + formatARS(batch.totalCost) + '</td>' +
+                       '<td class="text-right">' + formatARS(batch.unitCost) + '</td>' +
+                       (adminMode ? '<td class="text-center"><button type="button" onclick="deleteBatchRecord(\'' + batch.id + '\')" class="btn-xs btn-xs-danger">✕</button></td>' : '') +
+                     '</tr>';
+      }
+      document.getElementById('purchasesHistoryBody').innerHTML = purchHtml;
+    }
+
+    /* ==========================================================================
+       USUARIOS Y PERMISOS
+       ========================================================================== */
+    function togglePermissionsUI() {
+      var role = document.getElementById('usrRole').value;
+      var keys = ['pos', 'cash', 'products', 'stock', 'users', 'finance'];
+      for (var i = 0; i < keys.length; i++) {
+        var cb = document.getElementById('perm-' + keys[i]);
+        cb.checked = (role === 'admin');
+        cb.disabled = (role === 'admin');
+      }
+    }
+
+    function editUserAccount(userId) {
+      var target = null;
+      for (var i = 0; i < state.users.length; i++) {
+        if (state.users[i].id === userId) {
+          target = state.users[i];
+          break;
+        }
+      }
+      if (!target) return;
+
+      document.getElementById('editUserId').value = target.id;
+      document.getElementById('userFormTitle').innerHTML = 'Editar Usuario';
+      document.getElementById('userFormSubmitBtn').innerHTML = 'Actualizar Usuario';
+      document.getElementById('userFormCancelBtn').className = 'btn-outline';
+      document.getElementById('usrUsername').value = target.username;
+      document.getElementById('usrFullName').value = target.fullName;
+      document.getElementById('usrRole').value = target.role;
+      document.getElementById('usrPassword').value = target.pass;
+
+      var keys = ['pos', 'cash', 'products', 'stock', 'users', 'finance'];
+      for (var j = 0; j < keys.length; j++) {
+        var cb = document.getElementById('perm-' + keys[j]);
+        cb.disabled = (target.role === 'admin');
+        cb.checked = (target.role === 'admin') || (target.permissions && target.permissions.indexOf(keys[j]) !== -1);
+      }
+    }
+
+    function resetUserForm() {
+      document.getElementById('editUserId').value = '';
+      document.getElementById('userFormTitle').innerHTML = 'Configurar Usuario';
+      document.getElementById('userFormSubmitBtn').innerHTML = 'Guardar';
+      document.getElementById('userFormCancelBtn').className = 'btn-outline hidden';
+      document.getElementById('usrUsername').value = '';
+      document.getElementById('usrFullName').value = '';
+      document.getElementById('usrRole').value = 'vendedor';
+      document.getElementById('usrPassword').value = '';
+      togglePermissionsUI();
+    }
+
+    function deleteUserAccount(userId) {
+      if (state.users.length <= 1) {
+        alert('Debe existir al menos un usuario.');
+        return;
+      }
+      if (!confirm('¿Eliminar este usuario?')) return;
+      var next = [];
+      for (var i = 0; i < state.users.length; i++) {
+        if (state.users[i].id !== userId) next.push(state.users[i]);
+      }
+      state.users = next;
+      saveState();
+      renderUsersView();
+    }
+
+    function renderUsersView() {
+      var html = '';
+      for (var i = 0; i < state.users.length; i++) {
+        var u = state.users[i];
+        html += '<tr>' +
+                  '<td style="font-weight:700;">' + u.username + '</td>' +
+                  '<td>' + u.fullName + '</td>' +
+                  '<td><span class="badge badge-blue">' + u.role.toUpperCase() + '</span></td>' +
+                  '<td>' + (u.permissions ? u.permissions.join(', ') : '') + '</td>' +
+                  '<td class="text-center">' +
+                    '<button type="button" onclick="editUserAccount(\'' + u.id + '\')" class="btn-xs">✏️</button> ' +
+                    '<button type="button" onclick="deleteUserAccount(\'' + u.id + '\')" class="btn-xs btn-xs-danger">✕</button>' +
+                  '</td>' +
+                '</tr>';
+      }
+      document.getElementById('usersTableBody').innerHTML = html;
+    }
+
+    function saveUserAccount(e) {
+      if (e && e.preventDefault) e.preventDefault();
+      var editId = document.getElementById('editUserId').value;
+      var username = trimStr(document.getElementById('usrUsername').value);
+      var fullName = trimStr(document.getElementById('usrFullName').value);
+      var pass = document.getElementById('usrPassword').value;
+      var role = document.getElementById('usrRole').value;
+      var keys = ['pos', 'cash', 'products', 'stock', 'users', 'finance'];
+      var permissions = [];
+      for (var i = 0; i < keys.length; i++) {
+        if (role === 'admin' || document.getElementById('perm-' + keys[i]).checked) {
+          permissions.push(keys[i]);
+        }
+      }
+
+      if (editId) {
+        for (var j = 0; j < state.users.length; j++) {
+          if (state.users[j].id === editId) {
+            state.users[j].username = username;
+            state.users[j].fullName = fullName;
+            state.users[j].pass = pass;
+            state.users[j].role = role;
+            state.users[j].permissions = permissions;
+            break;
+          }
+        }
+      } else {
+        state.users.push({ id: 'u_' + new Date().getTime(), username: username, fullName: fullName, pass: pass, role: role, permissions: permissions });
+      }
+
+      saveState();
+      resetUserForm();
+      applyRolePermissions();
+      renderUsersView();
+      alert('✅ Usuario guardado.');
+      return false;
+    }
+
+    /* ==========================================================================
+       BALANCE Y P&L (CON SELECTOR MENSUAL Y EVOLUCIÓN HISTÓRICA)
+       ========================================================================== */
+    function extractYearMonth(dateStr) {
+      if (!dateStr) return '';
+      var dayPart = dateStr.split(' ')[0];
+      if (dayPart.indexOf('/') !== -1) {
+        var parts = dayPart.split('/');
+        if (parts.length === 3) return parts[2] + '-' + parts[1];
+      } else if (dayPart.indexOf('-') !== -1) {
+        var parts2 = dayPart.split('-');
+        if (parts2.length === 3) return parts2[0] + '-' + parts2[1];
+      }
+      return '';
+    }
+
+    function formatYearMonthName(ym) {
+      if (!ym || ym === 'ALL') return 'Histórico Acumulado';
+      var parts = ym.split('-');
+      var months = {
+        '01': 'Enero', '02': 'Febrero', '03': 'Marzo', '04': 'Abril',
+        '05': 'Mayo', '06': 'Junio', '07': 'Julio', '08': 'Agosto',
+        '09': 'Septiembre', '10': 'Octubre', '11': 'Noviembre', '12': 'Diciembre'
+      };
+      return (months[parts[1]] || parts[1]) + ' ' + parts[0];
+    }
+
+    function addFixedCost(e) {
+      if (e && e.preventDefault) e.preventDefault();
+      var name = trimStr(document.getElementById('fixedName').value);
+      var amount = parseFloat(document.getElementById('fixedAmount').value);
+      state.fixedCosts.push({ id: 'fc_' + new Date().getTime(), name: name, amount: amount });
+      saveState();
+      document.getElementById('fixedName').value = '';
+      document.getElementById('fixedAmount').value = '';
+      renderFinance();
+      return false;
+    }
+
+    function deleteFixedCost(fcId) {
+      if (!confirm('¿Eliminar este costo fijo?')) return;
+      var next = [];
+      for (var i = 0; i < state.fixedCosts.length; i++) {
+        if (state.fixedCosts[i].id !== fcId) next.push(state.fixedCosts[i]);
+      }
+      state.fixedCosts = next;
+      saveState();
+      renderFinance();
+    }
+
+    function renderFinance() {
+      var monthSel = document.getElementById('pnlMonthSelect');
+      var selectedPeriod = monthSel ? monthSel.value : 'ALL';
+
+      // Recolectar períodos únicos
+      var periodsMap = {};
+      for (var i = 0; i < state.sales.length; i++) {
+        var ymS = extractYearMonth(state.sales[i].date);
+        if (ymS) periodsMap[ymS] = true;
+      }
+      for (var j = 0; j < state.wastes.length; j++) {
+        var ymW = extractYearMonth(state.wastes[j].date);
+        if (ymW) periodsMap[ymW] = true;
+      }
+
+      var periodsList = [];
+      for (var key in periodsMap) {
+        if (periodsMap.hasOwnProperty(key)) periodsList.push(key);
+      }
+      periodsList.sort();
+      periodsList.reverse();
+
+      if (monthSel) {
+        var optsHtml = '<option value="ALL"' + (selectedPeriod === 'ALL' ? ' selected' : '') + '>Histórico Acumulado</option>';
+        for (var p = 0; p < periodsList.length; p++) {
+          var per = periodsList[p];
+          optsHtml += '<option value="' + per + '"' + (selectedPeriod === per ? ' selected' : '') + '>' + formatYearMonthName(per) + '</option>';
+        }
+        monthSel.innerHTML = optsHtml;
+      }
+
+      document.getElementById('pnlSubtitlePeriod').innerHTML = '(' + formatYearMonthName(selectedPeriod) + ')';
+
+      var rev = 0, cogs = 0, waste = 0, fixed = 0;
+      var byPayment = {};
+      var byShift = {};
+
+      for (var sIdx = 0; sIdx < state.sales.length; sIdx++) {
+        var s = state.sales[sIdx];
+        if (selectedPeriod === 'ALL' || extractYearMonth(s.date) === selectedPeriod) {
+          rev += s.total;
+          cogs += s.cogs;
+          byPayment[s.payment] = (byPayment[s.payment] || 0) + s.total;
+          byShift[s.shift] = (byShift[s.shift] || 0) + s.total;
+        }
+      }
+
+      for (var wIdx = 0; wIdx < state.wastes.length; wIdx++) {
+        var w = state.wastes[wIdx];
+        if (selectedPeriod === 'ALL' || extractYearMonth(w.date) === selectedPeriod) {
+          waste += w.cost;
+        }
+      }
+
+      var monthlyFixed = 0;
+      for (var k = 0; k < state.fixedCosts.length; k++) {
+        monthlyFixed += state.fixedCosts[k].amount;
+      }
+      var monthsCount = (selectedPeriod === 'ALL') ? Math.max(1, periodsList.length) : 1;
+      fixed = monthlyFixed * monthsCount;
+
+      var net = (rev - cogs) - waste - fixed;
+
+      document.getElementById('kpiRevenue').innerHTML = formatARS(rev);
+      document.getElementById('kpiCogs').innerHTML = formatARS(cogs);
+      document.getElementById('kpiWaste').innerHTML = formatARS(waste);
+      document.getElementById('kpiFixed').innerHTML = formatARS(fixed);
+      document.getElementById('kpiNet').innerHTML = formatARS(net);
+      document.getElementById('kpiNet').className = net >= 0 ? 'text-green' : 'text-red';
+
+      var badgeNet = document.getElementById('pnlHeaderNetBadge');
+      badgeNet.innerHTML = formatARS(net);
+      badgeNet.className = net >= 0 ? 'text-green' : 'text-red';
+
+      document.getElementById('pnlSales').innerHTML = formatARS(rev);
+      document.getElementById('pnlCogs').innerHTML = '- ' + formatARS(cogs);
+      document.getElementById('pnlGross').innerHTML = formatARS(rev - cogs);
+      document.getElementById('pnlWaste').innerHTML = '- ' + formatARS(waste);
+      document.getElementById('pnlFixed').innerHTML = '- ' + formatARS(fixed);
+      document.getElementById('pnlNet').innerHTML = formatARS(net);
+
+      // Desglose por medio de pago y operador
+      var payHtml = '';
+      for (var pm in byPayment) {
+        if (byPayment.hasOwnProperty(pm)) {
+          payHtml += '<li style="overflow:hidden;"><span style="float:left;">' + pm + ':</span><strong style="float:right;">' + formatARS(byPayment[pm]) + '</strong></li>';
+        }
+      }
+      document.getElementById('breakdownPayment').innerHTML = payHtml || '<li class="text-muted">Sin datos</li>';
+
+      var shiftHtml = '';
+      for (var shKey in byShift) {
+        if (byShift.hasOwnProperty(shKey)) {
+          shiftHtml += '<li style="overflow:hidden;"><span style="float:left;">' + shKey + ':</span><strong style="float:right;">' + formatARS(byShift[shKey]) + '</strong></li>';
+        }
+      }
+      document.getElementById('breakdownShift').innerHTML = shiftHtml || '<li class="text-muted">Sin datos</li>';
+
+      // Balance
+      var totalRevAll = 0, totalCogsAll = 0, totalWasteAll = 0;
+      for (var sa = 0; sa < state.sales.length; sa++) {
+        totalRevAll += state.sales[sa].total;
+        totalCogsAll += state.sales[sa].cogs;
+      }
+      for (var wa = 0; wa < state.wastes.length; wa++) {
+        totalWasteAll += state.wastes[wa].cost;
+      }
+      var totalFixedAll = monthlyFixed * Math.max(1, periodsList.length);
+      var totalNetAll = (totalRevAll - totalCogsAll) - totalWasteAll - totalFixedAll;
+
+      var invVal = 0, totalCap = 0;
+      for (var b = 0; b < state.batches.length; b++) {
+        invVal += (state.batches[b].remainingQty * state.batches[b].unitCost);
+        totalCap += state.batches[b].totalCost;
+      }
+      var cashBal = totalRevAll - totalFixedAll;
+      document.getElementById('balCash').innerHTML = formatARS(cashBal);
+      document.getElementById('balInventory').innerHTML = formatARS(invVal);
+      document.getElementById('balTotalAssets').innerHTML = formatARS(cashBal + invVal);
+      document.getElementById('balCapital').innerHTML = formatARS(totalCap);
+      document.getElementById('balRetained').innerHTML = formatARS(totalNetAll);
+      document.getElementById('balTotalEquity').innerHTML = formatARS(totalCap + totalNetAll);
+
+      // Costos fijos
+      var fcHtml = '';
+      for (var f = 0; f < state.fixedCosts.length; f++) {
+        var fc = state.fixedCosts[f];
+        fcHtml += '<tr>' +
+                    '<td>' + fc.name + '</td>' +
+                    '<td class="text-right text-red">' + formatARS(fc.amount) + '</td>' +
+                    '<td class="text-center" style="width:40px;"><button type="button" onclick="deleteFixedCost(\'' + fc.id + '\')" class="btn-xs btn-xs-danger">✕</button></td>' +
+                  '</tr>';
+      }
+      document.getElementById('fixedCostsBody').innerHTML = fcHtml;
+
+      // Tabla de Evolución Histórica Mensual
+      var evoBody = document.getElementById('evolutionTableBody');
+      if (evoBody) {
+        if (periodsList.length === 0) {
+          evoBody.innerHTML = '<tr><td colspan="8" class="text-center text-muted" style="padding:16px;">Aún no hay operaciones registradas por período.</td></tr>';
+        } else {
+          var evoHtml = '';
+          for (var eIdx = 0; eIdx < periodsList.length; eIdx++) {
+            var mKey = periodsList[eIdx];
+            var mRev = 0, mCogs = 0, mWaste = 0;
+            for (var ms = 0; ms < state.sales.length; ms++) {
+              if (extractYearMonth(state.sales[ms].date) === mKey) {
+                mRev += state.sales[ms].total;
+                mCogs += state.sales[ms].cogs;
+              }
+            }
+            for (var mw = 0; mw < state.wastes.length; mw++) {
+              if (extractYearMonth(state.wastes[mw].date) === mKey) {
+                mWaste += state.wastes[mw].cost;
+              }
+            }
+            var mGross = mRev - mCogs;
+            var mNet = mGross - mWaste - monthlyFixed;
+            var marginPct = mRev > 0 ? ((mNet / mRev) * 100).toFixed(1) + '%' : '0.0%';
+            var badgeCls = mNet >= 0 ? 'badge-blue' : 'badge-red';
+            evoHtml += '<tr>' +
+                         '<td style="font-weight:700;">' + formatYearMonthName(mKey) + '</td>' +
+                         '<td class="text-right">' + formatARS(mRev) + '</td>' +
+                         '<td class="text-right text-amber">' + formatARS(mCogs) + '</td>' +
+                         '<td class="text-right">' + formatARS(mGross) + '</td>' +
+                         '<td class="text-right text-red">' + formatARS(mWaste) + '</td>' +
+                         '<td class="text-right text-red">' + formatARS(monthlyFixed) + '</td>' +
+                         '<td class="text-right ' + (mNet >= 0 ? 'text-green' : 'text-red') + '" style="font-weight:800;">' + formatARS(mNet) + '</td>' +
+                         '<td class="text-center"><span class="badge ' + badgeCls + '">' + marginPct + '</span></td>' +
+                       '</tr>';
+          }
+          evoBody.innerHTML = evoHtml;
+        }
+      }
+    }
+
+    function renderAllViews() {
+      renderPOS();
+      renderProducts();
+      renderStock();
+      renderUsersView();
+      renderFinance();
+      renderCashSession();
+    }
+
+    function initApp() {
+      loadLocalState();
+      var user = getCurrentUser();
+      if (!user) {
+        openLoginModal();
+        return;
+      }
+      document.getElementById('loginModal').className = 'modal-overlay hidden';
+      applyRolePermissions();
+      renderAllViews();
+    }
+
+    initApp();
+  </script>
+</body>
+</html>
