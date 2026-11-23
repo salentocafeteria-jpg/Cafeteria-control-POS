@@ -1,0 +1,169 @@
+{
+  "orderCounter": 2,
+  "users": [
+    {
+      "id": "u_admin",
+      "username": "admin",
+      "fullName": "Administrador General",
+      "role": "admin",
+      "pass": "admin123",
+      "permissions": [
+        "pos",
+        "cash",
+        "products",
+        "stock",
+        "users",
+        "finance"
+      ]
+    },
+    {
+      "id": "u_vendedor",
+      "username": "vendedor",
+      "fullName": "Vendedor de Turno",
+      "role": "vendedor",
+      "pass": "vendedor123",
+      "permissions": [
+        "pos",
+        "cash"
+      ]
+    }
+  ],
+  "ingredients": [
+    {
+      "id": "ing_cafe",
+      "name": "Café en Grano",
+      "unit": "g",
+      "minStock": 300
+    },
+    {
+      "id": "ing_leche",
+      "name": "Leche Entera",
+      "unit": "ml",
+      "minStock": 2000
+    }
+  ],
+  "products": [
+    {
+      "id": "prod_espresso",
+      "name": "Café Espresso (20g)",
+      "price": 2500,
+      "type": "recipe",
+      "recipe": [
+        {
+          "ingredientId": "ing_cafe",
+          "qty": 20
+        }
+      ]
+    },
+    {
+      "id": "prod_latte",
+      "name": "Café con Leche / Latte",
+      "price": 3400,
+      "type": "recipe",
+      "recipe": [
+        {
+          "ingredientId": "ing_cafe",
+          "qty": 20
+        },
+        {
+          "ingredientId": "ing_leche",
+          "qty": 180
+        }
+      ]
+    },
+    {
+      "id": "prod_medialuna",
+      "name": "Medialuna de Manteca",
+      "price": 1800,
+      "type": "unit",
+      "minStock": 5,
+      "recipe": []
+    }
+  ],
+  "batches": [
+    {
+      "id": "b1",
+      "itemType": "ingredient",
+      "itemId": "ing_cafe",
+      "initialQty": 1000,
+      "remainingQty": 980,
+      "totalCost": 100,
+      "unitCost": 0.1,
+      "date": "16/11/2026 08:00"
+    },
+    {
+      "id": "b2",
+      "itemType": "ingredient",
+      "itemId": "ing_leche",
+      "initialQty": 5000,
+      "remainingQty": 5000,
+      "totalCost": 7500,
+      "unitCost": 1.5,
+      "date": "16/11/2026 08:05"
+    },
+    {
+      "id": "b3",
+      "itemType": "product",
+      "itemId": "prod_medialuna",
+      "initialQty": 30,
+      "remainingQty": 29,
+      "totalCost": 15000,
+      "unitCost": 500,
+      "date": "16/11/2026 08:10"
+    }
+  ],
+  "openOrders": [],
+  "sales": [
+    {
+      "id": "v_1795442124263",
+      "number": 1,
+      "date": "23/11/2026 10:55",
+      "shift": "Administrador General",
+      "customer": "",
+      "payment": "Efectivo",
+      "items": "1x Café Espresso (20g), 1x Medialuna de Manteca",
+      "subtotal": 4300,
+      "discountAmount": 0,
+      "total": 4300,
+      "cogs": 502
+    }
+  ],
+  "wastes": [],
+  "fixedCosts": [
+    {
+      "id": "fc1",
+      "name": "Alquiler Local",
+      "amount": 450000
+    },
+    {
+      "id": "fc2",
+      "name": "Servicios",
+      "amount": 65000
+    }
+  ],
+  "cashMovements": [
+    {
+      "id": "cm_1795442124263",
+      "date": "23/11/2026 10:55",
+      "shift": "Administrador General",
+      "type": "VENTA_EFECTIVO",
+      "concept": "Venta #1",
+      "amount": 4300
+    }
+  ],
+  "expenseCategories": [
+    {
+      "id": "ec_insumos",
+      "name": "Insumos y Descartables"
+    },
+    {
+      "id": "ec_limpieza",
+      "name": "Limpieza y Mantenimiento"
+    },
+    {
+      "id": "ec_admin",
+      "name": "Administración y Varios"
+    }
+  ],
+  "expenses": []
+}
